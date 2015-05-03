@@ -5,7 +5,6 @@ comments: true
 ---
 
 本文就java和javascript的区别进行说明
-<!--more-->
 
 ###一、java和javascript编译的区别
 

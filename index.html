@@ -4,8 +4,8 @@ layout: default
 
 <ul class="post-list">
     {% for post in site.posts %}
-    	<a href="{{post.url}}">{{ post.title }}</a><br>
-        {{ post.excerpt }} <br>
+    	<h2><a href="{{post.url}}">{{ post.title }}</a></h2>
+        {{ post.excerpt }}
         {{ post.date | date: "%F" }} <br>
         <a href="{{post.url}}"> Read More...</a><br><br>
     {% endfor %}
