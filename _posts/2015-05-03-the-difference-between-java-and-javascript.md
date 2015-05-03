@@ -4,6 +4,9 @@ title: Java和Javascript的一些比较
 comments: true
 ---
 
+本文就java和javascript的区别进行说明
+<!--more-->
+
 ###一、java和javascript编译的区别
 
 Java程序从源文件创建到程序运行要经过两大步骤：
