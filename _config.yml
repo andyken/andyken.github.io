@@ -3,7 +3,7 @@ markdown: redcarpet
 safe: false
 highlighter: pygments
 title: AndyKen's blog
-description: 一切事物皆有正反两面
+description: every coin has two sides
 theme: midnight
 disqusname: andyken
 
