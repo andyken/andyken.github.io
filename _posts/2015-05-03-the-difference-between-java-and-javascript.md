@@ -4,9 +4,6 @@ title: Java和Javascript的一些比较
 comments: true
 ---
 
-
-## Java和Javascript的一些比较
-
 ###一、java和javascript编译的区别
 
 Java程序从源文件创建到程序运行要经过两大步骤：
@@ -25,6 +22,7 @@ java字节码的解析过程主要是生成方法区 堆 栈等内容［2］，�
 静态和动态的概念是表示变量的类型是什么时候被绑定的。
 
 静态类型的变量类型在编译时候就必须绑定，比如 int num;而动态类型表示变量的类型在运行时候绑定，所以我们可以写var 同时绑定可以在运行是随时进行，比如
+
 ```
 var x // x 为 undefined
 var x = 6; // x 为数字
