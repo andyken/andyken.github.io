@@ -1,0 +1,11 @@
+username: andyken
+markdown: redcarpet
+safe: false
+highlighter: pygments
+title: AndyKen's blog
+description: 一切事物皆有正反两面
+theme: midnight
+disqusname: andyken
+
+# theme can be: hack, leap-day, merlot, midnight, minimal, modernist, slate, time-machine
+# those themes are all come from GitHub Pages Themes

@@ -1,7 +1,11 @@
-<!DOCTYPE html>
-<html>
-<body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
-</body>
-</html>
+---
+layout: default
+title: 文章目录
+---
+
+<ul class="post-list">
+    {% for post in site.posts %}
+        <a href="{{site.baseurl}}{{post.url}}"> {{ post.title }}  </a>
+        {{ post.date | date: "%F" }} <br>
+    {% endfor %}
+</ul>
