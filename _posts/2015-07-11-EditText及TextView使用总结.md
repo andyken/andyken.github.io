@@ -4,7 +4,7 @@ title: Android EditText TextView使用总结
 comments: true
 ---
 
-在工作中遇到了EditText光标、复制粘贴、禁用等问题。这里做一些总结
+在工作中遇到了EditText光标、复制粘贴、禁用及TextView的上下空白等问题。这里做一些总结
 
 ###一、EditText的光标控制
 
@@ -64,6 +64,7 @@ edittext.setLongClick(false);
 
 ```
 
+
 ###三、如何禁止Edittext获得焦点或者禁止弹出系统软键盘？
 
 当activity中包含edittext、并且没有设置activity软键盘属性android:windowSoftInputMode="stateAlwaysHidden|adjustPan时.进入activity会默认给该edittext获得焦点并且弹出系统软键盘，经调研实践，可通过clearFocus进行禁用获得焦点，同时需要注意，该activity存在其他focusable的view，才会让焦点从edittext转移到该view上。若只有一个可focus的edittext，那么clearFocus后仍然会重新让该edittext获得焦点
@@ -109,6 +110,7 @@ setEnable(false);
 
 ```
 
+
 ###六、如何去除TextView的文字上下的空格？
 在开发中，遇到设定textviewtextSize，但是其仍然存在上下文字空格的问题，经调研，可设置如下方法
 
@@ -150,8 +152,11 @@ private int getTextViewWidth() {
 
 
 参考文献
+
 [1]http://stackoverflow.com/questions/6275299/how-to-disable-copy-paste-from-to-edittext
+
 [2]http://stackoverflow.com/questions/27869983/edittext-disable-paste-replace-menu-pop-up-on-text-selection-handler-click-even/28893714#28893714
+
 [3]http://stackoverflow.com/questions/14282882/android-edit-text-cursor-doesnt-appear
 
 
