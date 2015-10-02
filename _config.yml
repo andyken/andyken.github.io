@@ -4,7 +4,7 @@ safe: false
 highlighter: pygments
 title: AndyKen's blog
 description: every coin has two sides
-theme: hack
+theme: minimal
 disqusname: andyken
 excerpt_separator: "###一"
 # theme can be: hack, leap-day, merlot, midnight, minimal, modernist, slate, time-machine
