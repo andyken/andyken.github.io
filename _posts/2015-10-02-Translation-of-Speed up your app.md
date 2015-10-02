@@ -18,16 +18,21 @@ comments: true
 
 Systrace是很多程序员不会用的工具，因为其中有很多看不懂的信息，让我们先看看他长什么样子
 
+![systrace-1](/assets/images/speed-up-your-app/systrace-1.png)
 
 我们可以通过Android Device Monitor tool 或者命令行进行生成，我们可以在这里发现更多信息。http://developer.android.com/tools/help/systrace.html
 
-在Android Device Monitor tool中点击 倒数第二个图标就可以启动
+在Android Device Monitor tool中点击 ![systrace-2](/assets/images/speed-up-your-app/systrace-2.png)倒数第二个图标就可以启动
 
 注意图上绿色 黄色 红色的颜色区分，红色代表性能出现了问题
 
 当我们点击该frame的时候
 
+![systrace-3](/assets/images/speed-up-your-app/systrace-3.png)
+
 我们可以看到所花费的时间为32ms，超过了frame render的16ms时间。同时，我们可以看到下面各个函数所花费的时间。以此，我们可以发现性能所在的问题
+
+![systrace-4](/assets/images/speed-up-your-app/systrace-4.png)
 
 当选择了某个frame的时候，我们可以通过点击m键来查看具体信息，有以下几个信息需要注意
 
@@ -51,6 +56,8 @@ The CPU duration is the actual time the CPU spent processing that slice.
 
 查看每个方法花费时间的工具 http://developer.android.com/tools/debugging/debugging-tracing.html
 
+![traceview-1](/assets/images/speed-up-your-app/traceview-1.png)
+
 注意其中有如下属性
 
 Name - The name of the method, along with a color to identify it on the graph above.
@@ -70,10 +77,13 @@ CPU/Real time per Call - The CPU/Real time it took per call to this method, on a
 
 注意如果图片上存在如下图的向下趋势，则代表是发生了GC
 
+![memory-profiling-1](/assets/images/speed-up-your-app/memory-profiling-1.png)
 
 ###五、Heap dump
 
 主要进行内存泄露的分析
+
+![heap-dump-1](/assets/images/speed-up-your-app/heap-dump-1.png)
 
 同样类似的工具还有LeakCanary
 
@@ -81,6 +91,11 @@ CPU/Real time per Call - The CPU/Real time it took per call to this method, on a
 ###六、Allocation Tracker
 
 根据以上信息，我们可以发现分配太多内存并且可能引起很多GC事件的方法，我们同时也可以发现同一个类的许多短生命周期的实例，针对这个情况，我们可以考虑使用Object pool来减少分配
+
+
+![allocation-tracker-1](/assets/images/speed-up-your-app/allocation-tracker-1.png)
+
+![allocation-tracker-2](/assets/images/speed-up-your-app/allocation-tracker-2.png)
 
 
 ###七、一些优化内存的提示
