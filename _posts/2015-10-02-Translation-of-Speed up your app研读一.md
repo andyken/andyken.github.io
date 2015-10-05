@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Speed up your app翻译（一）
+title: Speed up your app 研读（一）
 comments: true
 ---
 
