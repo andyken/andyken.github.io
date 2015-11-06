@@ -21,59 +21,58 @@ Constructor->onAttachedToWindow()->measure()->onMeasure()->layout()->onLayout()-
 
 ```
 public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean optical = isLayoutModeOptical(this);
-        if (optical != isLayoutModeOptical(mParent)) {
-            Insets insets = getOpticalInsets();
-            int oWidth  = insets.left + insets.right;
-            int oHeight = insets.top  + insets.bottom;
-            widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);
-            heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);
-        }
-
-        // Suppress sign extension for the low bytes
-        long key = (long) widthMeasureSpec << 32 | (long) heightMeasureSpec & 0xffffffffL;
-        if (mMeasureCache == null) mMeasureCache = new LongSparseLongArray(2);
-
-        if ((mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ||
-                widthMeasureSpec != mOldWidthMeasureSpec ||
-                heightMeasureSpec != mOldHeightMeasureSpec) {
-
-            // first clears the measured dimension flag
-            mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
-
-            resolveRtlPropertiesIfNeeded();
-
-            int cacheIndex = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -1 :
-                    mMeasureCache.indexOfKey(key);
-            if (cacheIndex < 0 || sIgnoreMeasureCache) {
-                // measure ourselves, this should set the measured dimension flag back
-                onMeasure(widthMeasureSpec, heightMeasureSpec);
-                mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
-            } else {
-                long value = mMeasureCache.valueAt(cacheIndex);
-                // Casting a long to int drops the high 32 bits, no mask needed
-                setMeasuredDimension((int) (value >> 32), (int) value);
-                mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
-            }
-
-            // flag not set, setMeasuredDimension() was not invoked, we raise
-            // an exception to warn the developer
-            if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET) != PFLAG_MEASURED_DIMENSION_SET) {
-                throw new IllegalStateException("onMeasure() did not set the"
-                        + " measured dimension by calling"
-                        + " setMeasuredDimension()");
-            }
-
-            mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
-        }
-
-        mOldWidthMeasureSpec = widthMeasureSpec;
-        mOldHeightMeasureSpec = heightMeasureSpec;
-
-        mMeasureCache.put(key, ((long) mMeasuredWidth) << 32 |
-                (long) mMeasuredHeight & 0xffffffffL); // suppress sign extension
+    boolean optical = isLayoutModeOptical(this);
+    if (optical != isLayoutModeOptical(mParent)) {
+        Insets insets = getOpticalInsets();
+        int oWidth  = insets.left + insets.right;
+        int oHeight = insets.top  + insets.bottom;
+        widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);
+        heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);
     }
 
+    // Suppress sign extension for the low bytes
+    long key = (long) widthMeasureSpec << 32 | (long) heightMeasureSpec & 0xffffffffL;
+    if (mMeasureCache == null) mMeasureCache = new LongSparseLongArray(2);
+
+    if ((mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ||
+            widthMeasureSpec != mOldWidthMeasureSpec ||
+            heightMeasureSpec != mOldHeightMeasureSpec) {
+
+        // first clears the measured dimension flag
+        mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
+
+        resolveRtlPropertiesIfNeeded();
+
+        int cacheIndex = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -1 :
+                mMeasureCache.indexOfKey(key);
+        if (cacheIndex < 0 || sIgnoreMeasureCache) {
+            // measure ourselves, this should set the measured dimension flag back
+            onMeasure(widthMeasureSpec, heightMeasureSpec);
+            mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+        } else {
+            long value = mMeasureCache.valueAt(cacheIndex);
+            // Casting a long to int drops the high 32 bits, no mask needed
+            setMeasuredDimension((int) (value >> 32), (int) value);
+            mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+        }
+
+        // flag not set, setMeasuredDimension() was not invoked, we raise
+        // an exception to warn the developer
+        if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET) != PFLAG_MEASURED_DIMENSION_SET) {
+            throw new IllegalStateException("onMeasure() did not set the"
+                    + " measured dimension by calling"
+                    + " setMeasuredDimension()");
+        }
+
+        mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
+    }
+
+    mOldWidthMeasureSpec = widthMeasureSpec;
+    mOldHeightMeasureSpec = heightMeasureSpec;
+
+    mMeasureCache.put(key, ((long) mMeasuredWidth) << 32 |
+            (long) mMeasuredHeight & 0xffffffffL); // suppress sign extension
+}
 ```
 
 该方法主要用来测量view的宽和高，
@@ -82,12 +81,12 @@ public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
 ```
 public static int makeMeasureSpec(int size, int mode) {
-            if (sUseBrokenMakeMeasureSpec) {
-                return size + mode;
-            } else {
-                return (size & ~MODE_MASK) | (mode & MODE_MASK);
-            }
-        }
+    if (sUseBrokenMakeMeasureSpec) {
+        return size + mode;
+    } else {
+        return (size & ~MODE_MASK) | (mode & MODE_MASK);
+    }
+}
 ```
 
 ```
@@ -105,14 +104,14 @@ public static int getSize(int measureSpec) {
      return (measureSpec & ~MODE_MASK);
 }
 
- boolean optical = isLayoutModeOptical(this);
-        if (optical != isLayoutModeOptical(mParent)) {
-            Insets insets = getOpticalInsets();
-            int oWidth  = insets.left + insets.right;
-            int oHeight = insets.top  + insets.bottom;
-            widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);
-            heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);
-        }
+boolean optical = isLayoutModeOptical(this);
+if (optical != isLayoutModeOptical(mParent)) {
+    Insets insets = getOpticalInsets();
+    int oWidth  = insets.left + insets.right;
+    int oHeight = insets.top  + insets.bottom;
+    widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);
+    heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);
+}
 ```
 
 这一段就是根据android:layoutMode来调整宽度和高度。如果layoutMode是使用opticalBounds视觉边界.
@@ -127,9 +126,7 @@ For example, figures 1 and 2 each show the same layout, but the version in figur
 mPrivateFlags mPrivateFlags2 mPrivateFlags3 为三个32位int值。代表各种View的状态。
 
 ```
- if ((mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ||
-                widthMeasureSpec != mOldWidthMeasureSpec ||
-                heightMeasureSpec != mOldHeightMeasureSpec)
+ if ((mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT || widthMeasureSpec != mOldWidthMeasureSpec || heightMeasureSpec != mOldHeightMeasureSpec)
 ```
 
 当我们调用forceLayout方法或者当前的规格和之前规格不一样时，进入到if内部。
@@ -141,8 +138,7 @@ resolveRtlPropertiesIfNeeded();
 如果需要我们支持从右往左的布局，则在这里进行属性转换。
 
 ```
-int cacheIndex = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -1 :
-                    mMeasureCache.indexOfKey(key);
+int cacheIndex = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -1 : mMeasureCache.indexOfKey(key);
 ```
 
 如果是强制layout或者在mMeasureCache（下面介绍）中不存在之前存放的规格参数或者sIgnoreMeasureCache标志位为true（该标志位代表忽略使用measure缓存，该标志位存在如下赋值关系
@@ -150,15 +146,15 @@ int cacheIndex = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -1
 ```
 sIgnoreMeasureCache = targetSdkVersion < KITKAT; 当小于4.4时该标志为false）
 if (cacheIndex < 0 || sIgnoreMeasureCache) {
-                // measure ourselves, this should set the measured dimension flag back
-                onMeasure(widthMeasureSpec, heightMeasureSpec);
-                mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
-            } else {
-                long value = mMeasureCache.valueAt(cacheIndex);
-                // Casting a long to int drops the high 32 bits, no mask needed
-                setMeasuredDimension((int) (value >> 32), (int) value);
-                mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
-            }
+    // measure ourselves, this should set the measured dimension flag back
+    onMeasure(widthMeasureSpec, heightMeasureSpec);
+    mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+} else {
+    long value = mMeasureCache.valueAt(cacheIndex);
+    // Casting a long to int drops the high 32 bits, no mask needed
+    setMeasuredDimension((int) (value >> 32), (int) value);
+    mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+}
 ```
 
 时调用onMeasure方法，否则直接调用setMeasuredDimension方法。
@@ -167,9 +163,9 @@ if (cacheIndex < 0 || sIgnoreMeasureCache) {
 
 ```
 protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
-                getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
-    }
+    setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
+            getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+}
 ```
 
 同样也是调用setMeasuredDimension方法 但是此时的方法传入的参数首先经过getDefaultSize方法进行转换。
@@ -177,21 +173,21 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
 ```
 public static int getDefaultSize(int size, int measureSpec) {
-        int result = size;
-        int specMode = MeasureSpec.getMode(measureSpec);
-        int specSize = MeasureSpec.getSize(measureSpec);
+    int result = size;
+    int specMode = MeasureSpec.getMode(measureSpec);
+    int specSize = MeasureSpec.getSize(measureSpec);
 
-        switch (specMode) {
-        case MeasureSpec.UNSPECIFIED:
-            result = size;
-            break;
-        case MeasureSpec.AT_MOST:
-        case MeasureSpec.EXACTLY:
-            result = specSize;
-            break;
-        }
-        return result;
+    switch (specMode) {
+    case MeasureSpec.UNSPECIFIED:
+        result = size;
+        break;
+    case MeasureSpec.AT_MOST:
+    case MeasureSpec.EXACTLY:
+        result = specSize;
+        break;
     }
+    return result;
+}
 ```
 
 该方法会根据规格实际确定真实的size
@@ -202,20 +198,20 @@ MeasureSpec.UNSPECIFIED是未指定尺寸，这种情况不多，一般都是父
 
 ```
 protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
-        boolean optical = isLayoutModeOptical(this);
-        if (optical != isLayoutModeOptical(mParent)) {
-            Insets insets = getOpticalInsets();
-            int opticalWidth  = insets.left + insets.right;
-            int opticalHeight = insets.top  + insets.bottom;
+    boolean optical = isLayoutModeOptical(this);
+    if (optical != isLayoutModeOptical(mParent)) {
+        Insets insets = getOpticalInsets();
+        int opticalWidth  = insets.left + insets.right;
+        int opticalHeight = insets.top  + insets.bottom;
 
-            measuredWidth  += optical ? opticalWidth  : -opticalWidth;
-            measuredHeight += optical ? opticalHeight : -opticalHeight;
-        }
-        mMeasuredWidth = measuredWidth;
-        mMeasuredHeight = measuredHeight;
-
-        mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
+        measuredWidth  += optical ? opticalWidth  : -opticalWidth;
+        measuredHeight += optical ? opticalHeight : -opticalHeight;
     }
+    mMeasuredWidth = measuredWidth;
+    mMeasuredHeight = measuredHeight;
+
+    mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
+}
 ```
 
 这个方法实际上是存储宽和高的值
@@ -228,50 +224,50 @@ protected final void setMeasuredDimension(int measuredWidth, int measuredHeight)
 
 ```
 public void layout(int l, int t, int r, int b) {
-        if ((mPrivateFlags3 & PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT) != 0) {
-            onMeasure(mOldWidthMeasureSpec, mOldHeightMeasureSpec);
-            mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
-        }
+    if ((mPrivateFlags3 & PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT) != 0) {
+        onMeasure(mOldWidthMeasureSpec, mOldHeightMeasureSpec);
+        mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+    }
 
-        int oldL = mLeft;
-        int oldT = mTop;
-        int oldB = mBottom;
-        int oldR = mRight;
+    int oldL = mLeft;
+    int oldT = mTop;
+    int oldB = mBottom;
+    int oldR = mRight;
 
-        boolean changed = isLayoutModeOptical(mParent) ?
-                setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);
+    boolean changed = isLayoutModeOptical(mParent) ?
+            setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);
 
-        if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) {
-            onLayout(changed, l, t, r, b);
-            mPrivateFlags &= ~PFLAG_LAYOUT_REQUIRED;
+    if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) {
+        onLayout(changed, l, t, r, b);
+        mPrivateFlags &= ~PFLAG_LAYOUT_REQUIRED;
 
-            ListenerInfo li = mListenerInfo;
-            if (li != null && li.mOnLayoutChangeListeners != null) {
-                ArrayList<OnLayoutChangeListener> listenersCopy =
-                        (ArrayList<OnLayoutChangeListener>)li.mOnLayoutChangeListeners.clone();
-                int numListeners = listenersCopy.size();
-                for (int i = 0; i < numListeners; ++i) {
-                    listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
-                }
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnLayoutChangeListeners != null) {
+            ArrayList<OnLayoutChangeListener> listenersCopy =
+                    (ArrayList<OnLayoutChangeListener>)li.mOnLayoutChangeListeners.clone();
+            int numListeners = listenersCopy.size();
+            for (int i = 0; i < numListeners; ++i) {
+                listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
             }
         }
-
-        mPrivateFlags &= ~PFLAG_FORCE_LAYOUT;
-        mPrivateFlags3 |= PFLAG3_IS_LAID_OUT;
     }
+
+    mPrivateFlags &= ~PFLAG_FORCE_LAYOUT;
+    mPrivateFlags3 |= PFLAG3_IS_LAID_OUT;
+}
 ```
 
 首先查看参数mPrivateFlags3中的标志位PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT 看该标志位是否为1，如果为1，则代表在layout之前还需要再次measure，然后判断layoutMode是否为opticalBounds模式，再分别调用setOptical或者setFrame来判断是否发生了变化，如果发生了变化则才能调用下面的onlayout方法，随后同上面，首先查看变量中mPrivateFlags 的PFLAG_LAYOUT_REQUIRED是否为1 如果为true，则开始调用onLayout方法。该onLayout为空，实际上它是在ViewGroup的各种子类中实现的。因为onlayout的过程就是为了确定视图在布局中的位置，即父视图决定子视图的显示位置[7]。然后是执行
 
 ```
 if (li != null && li.mOnLayoutChangeListeners != null) {
-                ArrayList<OnLayoutChangeListener> listenersCopy =
-                        (ArrayList<OnLayoutChangeListener>)li.mOnLayoutChangeListeners.clone();
-                int numListeners = listenersCopy.size();
-                for (int i = 0; i < numListeners; ++i) {
-                    listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
-                }
-            }
+    ArrayList<OnLayoutChangeListener> listenersCopy =
+            (ArrayList<OnLayoutChangeListener>)li.mOnLayoutChangeListeners.clone();
+    int numListeners = listenersCopy.size();
+    for (int i = 0; i < numListeners; ++i) {
+        listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
+    }
+}
 ```
 
 也就是注册的layoutChange函数，但是这里为什么要使用clone呢？我是这样理解的，我们不能将这种监听器直接暴露在外，所以考虑使用clone的方式。
@@ -281,16 +277,16 @@ draw方法较长，这里不再贴出。注意到该方法的注释给出了draw
 
 ```
 /*
-         * Draw traversal performs several drawing steps which must be executed
-         * in the appropriate order:
-         *
-         *      1. Draw the background
-         *      2. If necessary, save the canvas' layers to prepare for fading
-         *      3. Draw view's content
-         *      4. Draw children
-         *      5. If necessary, draw the fading edges and restore layers
-         *      6. Draw decorations (scrollbars for instance)
-         */
+ * Draw traversal performs several drawing steps which must be executed
+ * in the appropriate order:
+ *
+ *      1. Draw the background
+ *      2. If necessary, save the canvas' layers to prepare for fading
+ *      3. Draw view's content
+ *      4. Draw children
+ *      5. If necessary, draw the fading edges and restore layers
+ *      6. Draw decorations (scrollbars for instance)
+ */
 ```
 
 首先绘制背景区域
@@ -301,13 +297,13 @@ draw方法较长，这里不再贴出。注意到该方法的注释给出了draw
 
 ```
 // Step 3, draw the content
-            if (!dirtyOpaque) onDraw(canvas);
+   if (!dirtyOpaque) onDraw(canvas);
 
-            // Step 4, draw the children
-            dispatchDraw(canvas);
+// Step 4, draw the children
+   dispatchDraw(canvas);
 
-            // Step 6, draw decorations (scrollbars)
-            onDrawScrollBars(canvas);
+// Step 6, draw decorations (scrollbars)
+   onDrawScrollBars(canvas);
 ```
 
 这里和上面layout同理，也是在具体的子类中实现。
@@ -342,25 +338,26 @@ drawArc主要用来画圆弧。而clipPath和clipRect主要用来进行裁剪。
 
 ```
 /**
-             * 一直对clipRect的op参数有点迷惑，今天好好实验了一下，总结得到如下结果：
-             *
-             * 为了方便说明，把第一次clipRect的绘制范围设为A，第二次clipRect设定的范围设为B
-             *
-             * Op.DIFFERENCE，实际上就是求得的A和B的差集范围，即A－B，只有在此范围内的绘制内容才会被显示；
-             *
-             * Op.REVERSE_DIFFERENCE，实际上就是求得的B和A的差集范围，即B－A，只有在此范围内的绘制内容才会被显示；；
-             *
-             * Op.INTERSECT，即A和B的交集范围，只有在此范围内的绘制内容才会被显示；
-             *
-             * Op.REPLACE，不论A和B的集合状况，B的范围将全部进行显示，如果和A有交集，则将覆盖A的交集范围；
-             *
-             * Op.UNION，即A和B的并集范围，即两者所包括的范围的绘制内容都会被显示；
-             *
-             * Op.XOR，A和B的补集范围，此例中即A除去B以外的范围，只有在此范围内的绘制内容才会被显示；
-             */
+ * 一直对clipRect的op参数有点迷惑，今天好好实验了一下，总结得到如下结果：
+ *
+ * 为了方便说明，把第一次clipRect的绘制范围设为A，第二次clipRect设定的范围设为B
+ *
+ * Op.DIFFERENCE，实际上就是求得的A和B的差集范围，即A－B，只有在此范围内的绘制内容才会被显示；
+ *
+ * Op.REVERSE_DIFFERENCE，实际上就是求得的B和A的差集范围，即B－A，只有在此范围内的绘制内容才会被显示；；
+ *
+ * Op.INTERSECT，即A和B的交集范围，只有在此范围内的绘制内容才会被显示；
+ *
+ * Op.REPLACE，不论A和B的集合状况，B的范围将全部进行显示，如果和A有交集，则将覆盖A的交集范围；
+ *
+ * Op.UNION，即A和B的并集范围，即两者所包括的范围的绘制内容都会被显示；
+ *
+ * Op.XOR，A和B的补集范围，此例中即A除去B以外的范围，只有在此范围内的绘制内容才会被显示；
+ */
 ```
 
 参考文献
+
 [1]http://developer.android.com/intl/zh-cn/reference/android/view/Surface.html
 [2]https://source.android.com/devices/graphics/
 [3]http://developer.android.com/intl/zh-cn/guide/topics/graphics/opengl.html
