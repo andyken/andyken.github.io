@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Android View 解析源码研究及相关知识总结（一）
+title: Android View 源码研究及相关知识总结（一）
 comments: true
 ---
 
