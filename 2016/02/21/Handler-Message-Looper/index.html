@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Handler-Message-Looper研究 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本篇博客主要为Handler-Message-looper的一些深入学习笔记。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Handler-Message-Looper研究">
+<meta property="og:url" content="http://andyken.github.io/2016/02/21/Handler-Message-Looper/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客主要为Handler-Message-looper的一些深入学习笔记。">
+<meta property="og:updated_time" content="2016-03-26T06:32:33.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Handler-Message-Looper研究">
+<meta name="twitter:description" content="本篇博客主要为Handler-Message-looper的一些深入学习笔记。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Handler-Message-Looper研究
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Sun Feb 21 2016 00:00:00 GMT+0800">
+	
+		    2月 21, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客主要为Handler-Message-looper的一些深入学习笔记。</p>
+<a id="more"></a>
+<p>之前学习过Handler-Message-looper的相关知识，借着AOSP的学习计划，再更加深入理解一下该方法的知识。<br>首先，如何理解这三者？</p>
+<font color="red">Handler为消息的接收者和发送者，Message为消息，当然还有一个消息队列为MessageQueue。而Looper可以理解为消息队列的控制器。</font> 
+
+<p>一、Looper<br>首先，我们来看Looper，消息控制器。<br>在该类中，主要方法包括prepare和loop，其中使用prepare来生成消息控制器。</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">prepare</span>(<span class="params">boolean quitAllowed</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (sThreadLocal.<span class="keyword">get</span>() != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"Only one Looper may be created per thread"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    sThreadLocal.<span class="keyword">set</span>(<span class="keyword">new</span> Looper(quitAllowed));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其作用是new一个Looper，也就是new一个消息控制器。然后将该消息控制器加入到静态变量sThreadLocal中，也就是将looper和线程进行绑定，从而和线程对应的messageQueue绑定。</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">set</span>(<span class="params">T <span class="keyword">value</span></span>) </span>&#123;</span><br><span class="line">    Thread currentThread = Thread.currentThread();</span><br><span class="line">    Values values = values(currentThread);</span><br><span class="line">    <span class="keyword">if</span> (values == <span class="keyword">null</span>) &#123;</span><br><span class="line">        values = initializeValues(currentThread);</span><br><span class="line">    &#125;</span><br><span class="line">    values.put(<span class="keyword">this</span>, <span class="keyword">value</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中的Values为Thread的内部类，</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Values() &#123;</span><br><span class="line">    initializeTable(INITIAL_SIZE);</span><br><span class="line">    <span class="keyword">this</span>.size = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">this</span>.tombstones = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initializeTable</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.table = <span class="keyword">new</span> Object[capacity * <span class="number">2</span>];</span><br><span class="line">    <span class="keyword">this</span>.mask = table.length - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">this</span>.clean = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">this</span>.maximumLoad = capacity * <span class="number">2</span> / <span class="number">3</span>; <span class="comment">// 2/3</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>this.table为一个数组，该数组存储着looper数据。</p>
+<p>注意到上面的参数quitAllowed，该参数传给消息队列，用来告知其是否可以退出。<br>在基本的prepare构造函数上，有两个扩展的构造函数，一个是</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">void</span> <span class="title">prepare</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    prepare(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另一个给主线程创建消息控制器的：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">void</span> <span class="title">prepareMainLooper</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    prepare(<span class="keyword">false</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (Looper.class) &#123;</span><br><span class="line">        <span class="keyword">if</span> (sMainLooper != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"The main Looper has already been prepared."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        sMainLooper = myLooper();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Looper.loop(); 则是让Looper开始工作，从消息队列里取消息，处理消息。<br>该函数是一个循环，当调用mHandler.getLooper().quit()后则退出循环。</p>
+<p>二、Handler<br>Handler理解为消息的处理者和发送者。<br>我们在编程时如果使用了</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator"><span class="keyword">Handler</span> <span class="keyword">handler</span> = <span class="keyword">new</span> <span class="keyword">Handler</span>();</span></span><br></pre></td></tr></table></figure>
+<p>无参的Handler会调用</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mLooper = Looper.myLooper()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>这里实际上是将Handler和Looper相绑定，而looper则通过调用prepare方法完成和线程的绑定。</p>
+<p>如果当前的looper为null的话，则是因为没有调用Looper.prepare。</p>
+<p>一般如果我们在主线程的话，则直接使用</p>
+<font color="red">new Handler(Looper.getMainLooper())该方法将handler和主线程的looper绑定，从而获得主线程上的消息队列绑定，而该handler则是公共的，我们即可以在主线程上调用handler.post发送消息，也可以在其他线程上调用handler.post发送消息。但是其发送的消息还是到了线程对应的消息队列中，并且该handler收消息和处理消息时还是只能在对应的线程上进行。<br>- 从任意线程发送消息给一个looper的消息队列；<br>- 处理相关联的looper发过来的消息。<br></font>
+
+<p>在其他线程中，我们在run的时候需要调用Looper.prepare用来初始化控制器。<br>或者可以直接使用HandlerThread，</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public void run() &#123;</span><br><span class="line">    mTid = Process.myTid()<span class="comment">;</span></span><br><span class="line">    Looper.prepare()<span class="comment">;</span></span><br><span class="line">    synchronized (this) &#123;</span><br><span class="line">        mLooper = Looper.myLooper()<span class="comment">;</span></span><br><span class="line">        notifyAll()<span class="comment">;</span></span><br><span class="line">    &#125;</span><br><span class="line">    Process.setThreadPriority(mPriority)<span class="comment">;</span></span><br><span class="line">    onLooperPrepared()<span class="comment">;</span></span><br><span class="line">    Looper.loop()<span class="comment">;</span></span><br><span class="line">    mTid = -1<span class="comment">;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它直接帮我们完成了消息控制器的初始化和启动。<br>有关Handler的dispatchMessage和obtainMessage的用法，可以参考下面</p>
+<p>三、其他<br>1.有关Handler和Message的使用，可以参考下面的用法，在主线程上创建Handler，获取主线程的looper以及消息队列。然后在任意线程上使用该Handler发送消息，该消息加入到主线程的消息列表上了，当looper看到MessageQueue中含有Message，就将其广播出去。该handler对象收到该消息后，调用相应的handler对象的handleMessage()方法对其进行处理。同理 当我们使用handler.post方法的时候 我们会创建包含一个runnable引用的message，然后将这个message添加到这个looper的消息队列 并且其中的run方法中的内容会在与handler相关联的looper对应的线程上运行</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Handler</span> handler = <span class="keyword">new</span> <span class="type">Handler</span>(<span class="keyword">new</span> <span class="type">Handler</span>.<span class="type">Callback</span>() &#123;</span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    public boolean handleMessage(<span class="type">Message</span> msg) &#123;</span><br><span class="line">        <span class="keyword">if</span> (msg.what == <span class="type">MSG_CLEAR_CACHE_SUCCESS</span>) &#123;</span><br><span class="line">            processAfterClearCache();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (msg.what == <span class="type">MSG_GET_CACHE_SUCCESS</span>) &#123;</span><br><span class="line">            <span class="type">String</span> cacheString = msg.obj.toString();</span><br><span class="line">            <span class="keyword">if</span> (cacheString.equals(<span class="string">"0K"</span>)) &#123;</span><br><span class="line">                tvCacheSize.setText(<span class="string">""</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                tvCacheSize.setText(cacheString);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ShowCacheThread</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">Thread</span> &#123;</span></span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    public void run() &#123;</span><br><span class="line">        <span class="type">String</span> cacheSize = <span class="string">""</span>;</span><br><span class="line">        cacheSize = <span class="type">BitmapCache</span>.getInstance().getFsCacheSize();</span><br><span class="line">        <span class="type">Message</span> msg = handler.obtainMessage(<span class="type">MSG_GET_CACHE_SUCCESS</span>, cacheSize);</span><br><span class="line">        handler.sendMessage(msg);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.关于主线程，之所以ActivityThread叫主线程是因为如下，在main函数中会调用prepareMainLooper，并且调用looper启动消息的循环。</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line"></span><br><span class="line">    ActivityThread thread = <span class="keyword">new</span> ActivityThread();</span><br><span class="line">    thread.attach(<span class="keyword">false</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (sMainThreadHandler == <span class="keyword">null</span>) &#123;</span><br><span class="line">        sMainThreadHandler = thread.getHandler();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">false</span>) &#123;</span><br><span class="line">        Looper.myLooper().setMessageLogging(<span class="keyword">new</span></span><br><span class="line">                LogPrinter(Log.DEBUG, <span class="string">"ActivityThread"</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Looper.<span class="built_in">loop</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>参考资料<br>[1]<a href="https://greenrobot.me/devpost/android-psvm/" target="_blank" rel="external">https://greenrobot.me/devpost/android-psvm/</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Handler/">Handler</a> <a class="tag tag--primary tag--small t-link" href="/tags/Looper/">Looper</a> <a class="tag tag--primary tag--small t-link" href="/tags/Message/">Message</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/25/Ormlite相关总结2/"  data-tooltip="Ormlite相关总结（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/18/Ormlite性能优化总结/" data-tooltip="Ormlite性能优化总结">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/25/Ormlite相关总结2/"  data-tooltip="Ormlite相关总结（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/18/Ormlite性能优化总结/" data-tooltip="Ormlite性能优化总结">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/21/Handler-Message-Looper/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

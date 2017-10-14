@@ -1,0 +1,474 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Realm调研笔记 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本篇博客为数据库框架Realm的调研笔记">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Realm调研笔记">
+<meta property="og:url" content="http://andyken.github.io/2016/03/07/Realm调研笔记/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客为数据库框架Realm的调研笔记">
+<meta property="og:image" content="http://andyken.github.io/assets/images/realm/RealmBrowser.png">
+<meta property="og:updated_time" content="2016-03-14T07:20:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Realm调研笔记">
+<meta name="twitter:description" content="本篇博客为数据库框架Realm的调研笔记">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Realm调研笔记
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Mon Mar 07 2016 00:00:00 GMT+0800">
+	
+		    3月 07, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/调研笔记/">调研笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客为数据库框架Realm的调研笔记</p>
+<a id="more"></a>
+<p>一、Realm介绍<br>Realm为一套数据库和ORM的轻量级解决方案[1]，相比SQLite，Realm更快，并拥有更多现代数据库的特性，比如关系和关联查询、流式api、数据变更通知、加密、跨平台[2]。此外，Realm还和JSON、Gson、Retrofit提供了支持，Realm自带RealmBaseAdapter，能够完成自动更新，因此ui就能自动刷新，但目前只能和ListView配合使用[3]</p>
+<p>二、Realm使用[2][4]<br>1.引入Realm<br>compile ‘io.realm:realm-android:0.87.5’</p>
+<p>2.创建数据库</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Realm realm = Realm.getInstance(context)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>getInstance中会调用Realm.getInstance(new RealmConfiguration.Builder(context).name(DEFAULT_REALM_NAME).build()); 创建默认叫做default.realm的Realm文件</p>
+<p>或者使用配置文件</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Realm otherRealm =</span><br><span class="line">        Realm.getInstance(</span><br><span class="line">                new RealmConfiguration.Builder(context)</span><br><span class="line">                        .name(<span class="string">"myOtherRealm.realm”)//设置数据库文件名称</span></span><br><span class="line">                         .encryptionKey(key)<span class="comment">//加密数据库</span></span><br><span class="line">                        .build()</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>创建名为myOtherRealm的realm文件<br>这里使用构造器模式，在Builder的构造函数中完成配置文件的名称设置，路径设置(默认为Context.getFilesDir()位置)，数据版本号默认设置，以及modules的设置，这里的modules理解为不同的数据库，同时，使用流式布局完成属性的设置<br>build方法则调用RealmConfiguration的构造函数，该函数除了设置构造器设置的属性，还会调用createSchemaMediator完成schemaMediator的创建，该schemaMediator会根据设置的module来查找moduleMediator，如果我们没有通过setModules设置，那么会使用Realm中的默认Module：DefaultRealmModule ，它使用了注解allClasses=true代表包含了所有的Model，该Realm对应Mediator为RealmDefaultModuleMediator。</p>
+<p>3.创建Model<br>必须使用继承自RealmObject的类，并且其中的变量必须为private，必须定义Getter/Setter方法，Realm注解处理器会生成代理类，并会覆盖getter/setter方法，所以在getter/setter方法中不能对变量进行处理，同时，我们还不能定义除getter/setter之外的实例方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Country</span> <span class="keyword">extends</span> <span class="title">RealmObject</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@PrimaryKey</span></span><br><span class="line">    <span class="keyword">private</span> String code;<span class="comment">//设置主键</span></span><br><span class="line">    <span class="annotation">@Index</span></span><br><span class="line">    <span class="keyword">private</span> String name;<span class="comment">//设置索引</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> population;</span><br><span class="line">    <span class="annotation">@Ignore</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> sessionId;<span class="comment">//不存入数据库</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Country</span><span class="params">()</span> </span>&#123; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setName</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getPopulation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> population;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPopulation</span><span class="params">(<span class="keyword">int</span> population)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>.population = population;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关于Realm的类型，其支持所有基本数据类型boolean, byte, short, ìnt, long, float, double, String, Date and byte[]以及它们的封装类型，但对于其他类型，为了被持久化，必须继承自RealmObject，Lists则可以用RealmList，但无法使用Set和Map</p>
+<p>4.插入数据<br>Realm遵循ACID规范，为了保持原子性和一致性，强制所有写入操作在一个事务中，并且需要在getInstance的那个线程中完成插入</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">realm.beginTransaction();</span><br><span class="line">User <span class="keyword">user</span> = realm.createObject(User.class); // Create a new object</span><br><span class="line"><span class="keyword">user</span>.<span class="built_in">set</span>Name(<span class="string">"John"</span>);</span><br><span class="line"><span class="keyword">user</span>.<span class="built_in">set</span>Email(<span class="string">"john@corporation.com"</span>);</span><br><span class="line">realm.commitTransaction();</span><br></pre></td></tr></table></figure>
+<p>将已存在对象拷贝进realm</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Country country2 = new Country()<span class="comment">;</span></span><br><span class="line">country2.setName("Russia")<span class="comment">;</span></span><br><span class="line">country2.setPopulation(<span class="number">146430430</span>)<span class="comment">;</span></span><br><span class="line">country2.setCode("RU")<span class="comment">;</span></span><br><span class="line">realm.beginTransaction()<span class="comment">;</span></span><br><span class="line">Country copyOfCountry2 = myRealm.copyToRealm(country2)<span class="comment">;</span></span><br><span class="line">realm.commitTransaction()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>或者并不立即commit[4]</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">realm.beginWriteTransaction();</span><br><span class="line">User <span class="keyword">user</span> = realm.createObject(User.class); // Create a new object</span><br><span class="line"><span class="keyword">user</span>.<span class="built_in">set</span>Name(<span class="string">"John"</span>);</span><br><span class="line"><span class="keyword">user</span>.<span class="built_in">set</span>Email(<span class="string">"john@corporation.com"</span>)</span><br><span class="line">realm.cancelTransaction();</span><br></pre></td></tr></table></figure>
+<p>或者</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">realm.executeTransaction(<span class="keyword">new</span> Realm.Transaction() &#123;</span><br><span class="line">    @<span class="function">Override</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(Realm realm)</span> </span>&#123;</span><br><span class="line">        User user = realm.createObject(User.<span class="keyword">class</span>);</span><br><span class="line">        user.setName(<span class="string">"Cuber"</span>);</span><br><span class="line">        user.setAge(<span class="number">26</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>以及update</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">MyObject obj = <span class="keyword">new</span> MyObject();</span><br><span class="line">obj.setId(<span class="number">42</span>);</span><br><span class="line">obj.setName(<span class="string">"Fish"</span>);</span><br><span class="line">realm.beginTransaction();</span><br><span class="line"><span class="comment">// This will create a new one in Realm</span></span><br><span class="line"><span class="comment">// realm.copyToRealm(obj);</span></span><br><span class="line"><span class="comment">// This will update a existing one with the same id or create a new one instead</span></span><br><span class="line">realm.copyToRealmOrUpdate(obj);</span><br><span class="line">realm.commitTransaction();</span><br></pre></td></tr></table></figure>
+<p>注意上面的createObject方法<br><figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public &lt;<span class="keyword">E</span> extends RealmObject&gt; <span class="keyword">E</span> createObject(<span class="keyword">Class</span>&lt;<span class="keyword">E</span>&gt; clazz) &#123;</span><br><span class="line">    checkIfValid();</span><br><span class="line">    <span class="keyword">Table</span> <span class="keyword">table</span> = getTable(clazz);</span><br><span class="line">    long rowIndex = <span class="keyword">table</span>.addEmptyRow();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">get</span>(clazz, rowIndex);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中会调用到getTable，</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">Table</span> getTable(<span class="keyword">Class</span>&lt;? extends RealmObject&gt; clazz) &#123;</span><br><span class="line">    <span class="keyword">Table</span> <span class="keyword">table</span> = classToTable.<span class="literal">get</span>(clazz);</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">table</span> == null) &#123;</span><br><span class="line">        clazz = Util.getOriginalModelClass(clazz);</span><br><span class="line">        <span class="keyword">table</span> = sharedGroupManager.getTable(configuration.getSchemaMediator().getTableName(clazz));</span><br><span class="line">        classToTable.put(clazz, <span class="keyword">table</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">table</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中使用了在RealmConfiguration中初始化的schemaMediator得到clazz的tableName,若为默认的RealmDefaultModuleMediator，那么无论传入什么clazz，都会调用AllTypesRealmProxy.getTableName();返回字符串”class_AllTypes”，并会调用Group的getTable方法，其中会调用new table方法完成数据表的创建。</p>
+<p>5.查询数据<br>在某个线程上执行query后，得到的数据包括queries、results 是不能被另一个线程访问的。所以我们一般在UI线程上完成数据库的查询。</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">RealmQuery&lt;User&gt; <span class="keyword">query</span> = realm.where(User.<span class="keyword">class</span>);</span><br><span class="line"><span class="keyword">query</span>.equalTo(<span class="string">"name"</span>, <span class="string">"John"</span>);</span><br><span class="line"><span class="keyword">query</span>.or().equalTo(<span class="string">"name"</span>, <span class="string">"Peter"</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Execute the query:</span></span><br><span class="line">RealmResults&lt;User&gt; result1 = <span class="keyword">query</span>.findAll();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Or alternatively do the same all at once (the "Fluent interface"):</span></span><br><span class="line">RealmResults&lt;User&gt; result2 = realm.where(User.<span class="keyword">class</span>)</span><br><span class="line">    .equalTo(<span class="string">"name"</span>, <span class="string">"John"</span>)</span><br><span class="line">    .or()</span><br><span class="line">    .equalTo(<span class="string">"name"</span>, <span class="string">"Peter"</span>)</span><br><span class="line">    .findAll();</span><br></pre></td></tr></table></figure>
+<p>除了equalTo 还有between() greaterThan() beginsWith()等</p>
+<p>realm.where()方法调用了</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RealmQuery.createQuery(<span class="keyword">this</span>, clazz);</span><br></pre></td></tr></table></figure>
+<p>随后调用</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public RealmResults&lt;<span class="keyword">E</span>&gt; findAll() &#123;</span><br><span class="line">    checkQueryIsNotReused();</span><br><span class="line">    RealmResults&lt;<span class="keyword">E</span>&gt; realmResults;</span><br><span class="line">    <span class="keyword">if</span> (isDynamicQuery()) &#123;</span><br><span class="line">        realmResults =  (RealmResults&lt;<span class="keyword">E</span>&gt;) RealmResults.createFromDynamicTableOrView(realm, <span class="keyword">query</span>.findAll(), className);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        realmResults = RealmResults.createFromTableOrView(realm, <span class="keyword">query</span>.findAll(), clazz);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> realmResults;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中还会调用到TableQuery的findAll方法</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> TableView <span class="title">findAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    validateQuery();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Execute the disposal of abandoned realm objects each time a new realm object is created</span></span><br><span class="line">    context.executeDelayedDisposal();</span><br><span class="line">    <span class="keyword">long</span> nativeViewPtr = nativeFindAll(nativePtr, <span class="number">0</span>, Table.INFINITE, Table.INFINITE);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> TableView(<span class="keyword">this</span>.context, <span class="keyword">this</span>.table, nativeViewPtr, <span class="keyword">this</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException e) &#123;</span><br><span class="line">        TableView.nativeClose(nativeViewPtr);</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里底层使用了c++来完成数据的查找。然后会生成一个tableview，可以理解为视图，视图是查询的结果集，但是不保存真实数据，而是匹配对象引用的列表。最后将视图作为参数传递给RealmResults。RealmResults 可以理解为数据库中的动态视图的一个包装，如果该RealmResults在具有Looper的线程上，那么当我们调用commitTransaction完成某个表的update操作后，该表对应的RealmResults会自动更新。如果是非looper的线程，则需要我们调用realm.refresh方法完成RealmResults的更新。</p>
+<p>RealmResults就是Realm性能优于ormlite的原因之一，RealmResults，可以看做是一个类型安全的Cursor，但不像cursor，我们不需要拷贝数据到cursorWindow中，因此没有pagination effect，同时我们不需要担心cursorWindow的limit问题。大多数的orm框架都是将数据赋值到java的堆内存中，这是十分耗时耗内存的操作，并且会一次性加载进很多我们不需要的数据库字段，Realm的做法就是只加载一次，并且是只加载引用，当我们需要某个字段时，才去加载需要的数据[8]</p>
+<p>异步查询findAllAsync：类似Java中的Feature<br>查询不会被阻塞，而是直接返回RealmResults，当后台完成查询后会之前返回的RealmResults会被更新</p>
+<p>查询结果可以使用一些排序和聚合方法</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RealmResults</span>&lt;<span class="type">User</span>&gt; <span class="literal">result</span> = realm.where(<span class="type">User</span>.class).findAll();</span><br><span class="line"><span class="literal">result</span>.sort(<span class="string">"age"</span>); // <span class="type">Sort</span> ascending</span><br><span class="line"><span class="literal">result</span>.sort(<span class="string">"age"</span>, <span class="type">Sort</span>.<span class="type">DESCENDING</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">RealmResults&lt;User&gt; results = realm.where(User.class).findAll();</span><br><span class="line"><span class="keyword">long</span>   sum     = results.sum(<span class="string">"age"</span>).longValue();</span><br><span class="line"><span class="keyword">long</span>   <span class="built_in">min</span>     = results.<span class="built_in">min</span>(<span class="string">"age"</span>).longValue();</span><br><span class="line"><span class="keyword">long</span>   <span class="built_in">max</span>     = results.<span class="built_in">max</span>(<span class="string">"age"</span>).longValue();</span><br><span class="line"><span class="keyword">double</span> average = results.average(<span class="string">"age"</span>);</span><br><span class="line"><span class="keyword">long</span>   matches = results.<span class="built_in">size</span>();</span><br></pre></td></tr></table></figure>
+<p>6.删除数据</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// <span class="type">All</span> changes to data must happen <span class="keyword">in</span> a transaction</span><br><span class="line">realm.beginTransaction();</span><br><span class="line"></span><br><span class="line">// remove single match</span><br><span class="line"><span class="literal">result</span>.remove(<span class="number">0</span>);</span><br><span class="line"><span class="literal">result</span>.removeLast();</span><br><span class="line"></span><br><span class="line">// remove a single <span class="keyword">object</span></span><br><span class="line"><span class="type">Dog</span> dog = <span class="literal">result</span>.get(<span class="number">5</span>);</span><br><span class="line">dog.removeFromRealm();</span><br><span class="line"></span><br><span class="line">// <span class="type">Delete</span> all matches</span><br><span class="line"><span class="literal">result</span>.clear();</span><br><span class="line"></span><br><span class="line">realm.commitTransaction();</span><br></pre></td></tr></table></figure>
+<p>7.数据库update[6]<br>给realm配置设置schemaVersion和migration文件即可</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">RealmConfiguration config1 = <span class="keyword">new</span> RealmConfiguration.Builder(<span class="keyword">this</span>)</span><br><span class="line">    .name(<span class="string">"default1"</span>)</span><br><span class="line">    .schemaVersion(<span class="number">3</span>)</span><br><span class="line">    .migration(<span class="keyword">new</span> Migration())</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line">realm = Realm.getInstance(config1); <span class="comment">// Automatically run migration if needed</span></span><br><span class="line">showStatus(<span class="string">"Default1"</span>);</span><br><span class="line">showStatus(realm);</span><br><span class="line">realm.close();<span class="comment">//关闭realm</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">public class Migration implements RealmMigration &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">@Override</span></span><br><span class="line">    public void migrate(final DynamicRealm realm, long oldVersion, long newVersion) &#123;</span><br><span class="line">        // During a migration, a DynamicRealm is exposed. A DynamicRealm is an untyped variant of a normal Realm, but</span><br><span class="line">        // with the same object creation and query capabilities.</span><br><span class="line">        // A DynamicRealm uses Strings instead of Class references because the Classes might not even exist or have been</span><br><span class="line">        // renamed.</span><br><span class="line"></span><br><span class="line">        // Access the Realm schema in order to create, modify or delete classes and their fields.</span><br><span class="line">        RealmSchema schema = realm.getSchema();</span><br><span class="line"></span><br><span class="line">        /<span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span></span><br><span class="line">            // Version 0</span><br><span class="line">            class Person</span><br><span class="line">                <span class="comment">@Required</span></span><br><span class="line">                String firstName;</span><br><span class="line">                <span class="comment">@Required</span></span><br><span class="line">                String lastName;</span><br><span class="line">                int    age;</span><br><span class="line"></span><br><span class="line">            // Version 1</span><br><span class="line">            class Person</span><br><span class="line">                <span class="comment">@Required</span></span><br><span class="line">                String fullName;            // combine firstName and lastName into single field.</span><br><span class="line">                int age;</span><br><span class="line">        <span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span><span class="keyword">*</span>/</span><br><span class="line">        // Migrate from version 0 to version 1</span><br><span class="line">        if (oldVersion == 0) &#123;</span><br><span class="line">            RealmObjectSchema personSchema = schema.get(<span class="string">"Person"</span>);</span><br><span class="line"></span><br><span class="line">            // Combine 'firstName' and 'lastName' in a new field called 'fullName'</span><br><span class="line">            personSchema</span><br><span class="line">                    .addField(<span class="string">"fullName"</span>, String.class, FieldAttribute.REQUIRED)</span><br><span class="line">                    .transform(new RealmObjectSchema.Function() &#123;</span><br><span class="line">                        <span class="comment">@Override</span></span><br><span class="line">                        public void apply(DynamicRealmObject obj) &#123;</span><br><span class="line">                            obj.set(<span class="string">"fullName"</span>, obj.getString(<span class="string">"firstName"</span>) + <span class="string">" "</span> + obj.getString(<span class="string">"lastName"</span>));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;)</span><br><span class="line">                    .removeField(<span class="string">"firstName"</span>)</span><br><span class="line">                    .removeField(<span class="string">"lastName"</span>);</span><br><span class="line">            oldVersion++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>三、一些高级特性<br>1.Dynamic Realms[7]: 使用String 而不是Class，DynamicRealmObject person = realm.createObject(“Person”); 他会忽略schema，migration，和数据版本号，这种写法会放弃安全性和性能但会提高灵活性。在编译或者数据库升级时我们无法通过Class操作数据库等场景时可以考虑使用该种方式</p>
+<p>2.和JSON结合使用</p>
+<p>loadJsonFromStream</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">InputStream stream = getAssets().<span class="keyword">open</span>(<span class="string">"cities.json"</span>);</span><br><span class="line">realm.beginTransaction();</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    realm.createAllFromJson(City.<span class="keyword">class</span>, stream);</span><br><span class="line">    realm.commitTransaction();</span><br><span class="line">&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    <span class="comment">// Remember to cancel the transaction if anything goes wrong.</span></span><br><span class="line">    realm.cancelTransaction();</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (stream != <span class="literal">null</span>) &#123;</span><br><span class="line">        stream.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>或者<br>loadJsonFromJsonObject</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; city = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;();</span><br><span class="line">city.put(<span class="string">"name"</span>, <span class="string">"København"</span>);</span><br><span class="line">city.put(<span class="string">"votes"</span>, <span class="string">"9"</span>);</span><br><span class="line"><span class="keyword">JSONObject</span> json = <span class="keyword">new</span> <span class="keyword">JSONObject</span>(city);</span><br><span class="line"></span><br><span class="line">realm.beginTransaction();</span><br><span class="line">realm.createObjectFromJson(City.class, json);</span><br><span class="line">realm.commitTransaction();</span><br></pre></td></tr></table></figure>
+<p>loadJsonFromString</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">String json = "&#123; name: \"Aarhus\", votes: 99 &#125;"<span class="comment">;</span></span><br><span class="line">realm.beginTransaction()<span class="comment">;</span></span><br><span class="line">realm.createObjectFromJson(City.class, json)<span class="comment">;</span></span><br><span class="line">realm.commitTransaction()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>3.和Gson结合使用<br>Realm也可以和Gson结合使用，但是在GSON1.7.1以上的版本中，需要设置ExclusionStrategies，否则会引起崩溃</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Gson gson = <span class="keyword">new</span> GsonBuilder()</span><br><span class="line">.setExclusionStrategies(<span class="keyword">new</span> ExclusionStrategy() &#123;</span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">boolean</span> <span class="title">shouldSkipField</span><span class="params">(FieldAttributes f)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> f.getDeclaringClass().equals(RealmObject.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">boolean</span> <span class="title">shouldSkipClass</span><span class="params">(Class&lt;?&gt; clazz)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br><span class="line">.create();</span><br><span class="line"></span><br><span class="line">String json = <span class="string">"&#123; name : 'John', email : 'john@corporation.com' &#125;"</span>;</span><br><span class="line">User user = gson.fromJson(json, User.class);</span><br></pre></td></tr></table></figure>
+<p>4.和ListView结合使用<br>Realm自带RealmBaseAdapter，我们只需要将查询结果RealmResults直接作为参数传递给RealmBaseAdapter的构造函数，若列表数据有update，在我们提交完数据库事务以后Realm会自动更新RealmResults</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">RealmResults&lt;TimeStamp&gt; timeStamps = realm.where(TimeStamp.<span class="keyword">class</span>).<span class="keyword">findAll</span>();</span><br><span class="line"><span class="keyword">final</span> MyAdapter adapter = <span class="keyword">new</span> MyAdapter(<span class="keyword">this</span>, R.id.listView, timeStamps, <span class="keyword">true</span>);</span><br><span class="line">ListView listView = (ListView) findViewById(R.id.listView);</span><br><span class="line">listView.setAdapter(adapter);</span><br></pre></td></tr></table></figure>
+<p>5.Realm数据查看<br><img src="/assets/images/realm/RealmBrowser.png" alt="RealmBrowser"></p>
+<p>6.数据库变更通知[9]<br>当后台线程向Realm添加数据，您的UI线程或者其它线程可以添加一个监听器来获取数据改变的通知。监听器在Realm数据改变的时候会被触发。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">MyActivity</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">Activity</span> &#123;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">Realm</span> realm;</span><br><span class="line">    <span class="comment">// A reference to RealmChangeListener needs to be held to avoid being</span></span><br><span class="line">    <span class="comment">// removed by the garbage collector.</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">RealmChangeListener</span> realmListener;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> void onCreate(<span class="type">Bundle</span> savedInstanceState) &#123;</span><br><span class="line">      <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">      realm = <span class="type">Realm</span>.getDefaultInstance();</span><br><span class="line">      reamlListener = <span class="keyword">new</span> <span class="type">RealmChangeListener</span>() &#123;</span><br><span class="line">        <span class="annotation">@Override</span></span><br><span class="line">        public void onChange() &#123;</span><br><span class="line">            <span class="comment">// ... do something with the updates (UI, etc.) ...</span></span><br><span class="line">        &#125;&#125;;</span><br><span class="line">      realm.addChangeListener(realmListener);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> void onDestroy() &#123;</span><br><span class="line">        <span class="keyword">super</span>.onDestroy();</span><br><span class="line">        <span class="comment">// Remove the listener.</span></span><br><span class="line">        realm.removeChangeListener(realmListener);</span><br><span class="line">        <span class="comment">// Close the realm instance.</span></span><br><span class="line">        realm.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>避免使用匿名类加入到listener中，自行维护listener的销毁。</p>
+<p>7.关系和关联查询<br>任意两个RealmObject可以相互关联</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">Contact</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">RealmObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">Email</span> email;</span><br><span class="line">    <span class="comment">// Other fields…</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">Contact</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">RealmObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">RealmList</span>&lt;<span class="type">Email</span>&gt; emails;</span><br><span class="line">    <span class="comment">// Other fields…</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也可以使用递归</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">Person</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">RealmObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">String</span> name;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">RealmList</span>&lt;<span class="type">Person</span>&gt; friends;</span><br><span class="line">    <span class="comment">// Other fields…</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关联查询</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RealmResults&lt;Contact&gt; contacts = realm.<span class="keyword">where</span>(Contact.<span class="type">class</span>).equalTo(<span class="string">"emails.active"</span>, <span class="constant">true</span>).findAll();</span><br></pre></td></tr></table></figure>
+<p>四、Realm缺点[3][10]<br>1.Realm最终并不是使用Model，而是使用基于Model的代理类，该代理类会重载getter和setter方法以便访问数据库存取数据，所以我们不能在Getter和Setter中自定义数据的处理。并且只支持私有成员变量。为了解决不能在Model中自定义非getter和setter的问题，我们需要为数据对象定义两套类：POJOs和Realm对象，然后创建一个能在两者之间映射的abstraction[5]。<br>2.由于 Realm 极度线程安全，虽然在不同线程里，都能去访问 Realm “数据库”，但一个线程里的 Realms、RealmObject、queries、results 等等，是不能被另一个线程访问的。（比如在一个线程里，我从网络获取了数据，然后以 RealmObject 缓存。然后回到 UI 主线程，此时我要更新刚获得的网络数据，就需要再做一次本地查询。 ）<br>3.忽略了大小写查询</p>
+<p>参考文献<br>[1]<a href="https://realm.io/" target="_blank" rel="external">https://realm.io/</a><br>[2]<a href="http://code.tutsplus.com/tutorials/up-and-running-with-realm-for-android--cms-25241" target="_blank" rel="external">http://code.tutsplus.com/tutorials/up-and-running-with-realm-for-android--cms-25241</a><br>[3]<a href="http://ycz.im/2015/07/10/using-realm-to-replace-sqlite-in-android/" target="_blank" rel="external">http://ycz.im/2015/07/10/using-realm-to-replace-sqlite-in-android/</a><br>[4]<a href="https://bng86.gitbooks.io/android-third-party-/content/realm.html" target="_blank" rel="external">https://bng86.gitbooks.io/android-third-party-/content/realm.html</a><br>[5]<a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/1203/3743.html?utm_source=tuicool&amp;utm_medium=referral" target="_blank" rel="external">http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/1203/3743.html?utm_source=tuicool&amp;utm_medium=referral</a><br>[6]<a href="https://realm.io/docs/java/latest/#migrations" target="_blank" rel="external">https://realm.io/docs/java/latest/#migrations</a><br>[7]<a href="https://realm.io/docs/java/latest/#dynamic-realms" target="_blank" rel="external">https://realm.io/docs/java/latest/#dynamic-realms</a><br>[8]<a href="http://stackoverflow.com/questions/35219165/realm-lazy-queries-are-they-faster-than-ormlite" target="_blank" rel="external">http://stackoverflow.com/questions/35219165/realm-lazy-queries-are-they-faster-than-ormlite</a><br>[9]<a href="https://realm.io/cn/docs/java/latest/#notifications" target="_blank" rel="external">https://realm.io/cn/docs/java/latest/#notifications</a><br>[10]<a href="https://realm.io/cn/docs/java/latest/#section-32" target="_blank" rel="external">https://realm.io/cn/docs/java/latest/#section-32</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Realm/">Realm</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/04/19/Realm调研笔记(二)/"  data-tooltip="Realm调研笔记（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/25/Ormlite相关总结2/" data-tooltip="Ormlite相关总结（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/04/19/Realm调研笔记(二)/"  data-tooltip="Realm调研笔记（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/25/Ormlite相关总结2/" data-tooltip="Ormlite相关总结（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/03/07/Realm调研笔记/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

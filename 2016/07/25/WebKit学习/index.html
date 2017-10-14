@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>WebKit学习笔记 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="该篇文章用于记录一些学习WebKit的一些总结，包含WebKit的发展历史、WebKit的架构、WebKit的工作原理、Android FrameWork层WebView的一些介绍以及WebView的内存泄露的一些问题。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="WebKit学习笔记">
+<meta property="og:url" content="http://andyken.github.io/2016/07/25/WebKit学习/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="该篇文章用于记录一些学习WebKit的一些总结，包含WebKit的发展历史、WebKit的架构、WebKit的工作原理、Android FrameWork层WebView的一些介绍以及WebView的内存泄露的一些问题。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/webkit-version-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/webkit-version-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/memorycache.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/three-tree.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/memory-leak-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/memory-leak-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/memory-leak-3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/webkit/memory-leak-4.png">
+<meta property="og:updated_time" content="2016-09-10T04:55:05.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WebKit学习笔记">
+<meta name="twitter:description" content="该篇文章用于记录一些学习WebKit的一些总结，包含WebKit的发展历史、WebKit的架构、WebKit的工作原理、Android FrameWork层WebView的一些介绍以及WebView的内存泄露的一些问题。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            WebKit学习笔记
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Mon Jul 25 2016 00:00:00 GMT+0800">
+	
+		    7月 25, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/学习笔记/">学习笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>该篇文章用于记录一些学习WebKit的一些总结，包含WebKit的发展历史、WebKit的架构、WebKit的工作原理、Android FrameWork层WebView的一些介绍以及WebView的内存泄露的一些问题。</p>
+<a id="more"></a>
+<p>一、WebKit的发展历史</p>
+<p>WebKit为开源浏览器排版引擎。其起源最早为KDE开源桌面环境项目的HTML Widget，后来发展为KDE标准组件、KHTML排版引擎和KJS JavaScript脚本引擎。后苹果公司在比较了Gecko和KHTML后，选择了更为轻巧和清晰的KHTML，将KHTML更名为WebCore，将KJS更名为JavaScriptCore，将两者合起来称作WebKit，并运用到随后发布的iPhone中。2008年9月，谷歌推出基于WebKit内核的Chrome浏览器，随后也将webkit移植到Android中，将JavascriptCore替换为V8，这样WebKit就在移动端占据垄断地位。[1]</p>
+<p>下面来看一下不同Android版本中webkit的版本[2]。</p>
+<p><img src="/assets/images/webkit/webkit-version-1.png" alt="WebKit-Version-1"></p>
+<p><img src="/assets/images/webkit/webkit-version-2.png" alt="WebKit-Version-2"></p>
+<p>注意Android Version中使用的谷歌版本和Android系统中webview所使用的webkit版本是存在不一致的情况的。其中，Android3.2.1 Google的Android的Chrome版本为12，其中使用的webkit 534.30版本。Android4.1.1中JELLY_BEAN，Google将Android中带的浏览器替换为Chrome18.0.1025，其使用webkit535.19，而Android系统中的webkit版本则为534.30。在4.3中将自带的Chrome替换为25.0.1364版本，用的webkit537.22版本而Android系统中的webkit版本为534.30。</p>
+<p>时间来到2013年4月，由于谷歌希望拥有更多的开发自由度并移除Chrome没有使用的webkit组件，同时避免与上游冲突，谷歌宣布退出了Webkit项目，创建了自己的渲染引擎Blink[3]。这个Blink是从WebKit直接复制出来的一个版本，谷歌移除了chromium无关的内容，并将代码进行整理。也就是在4.4 KITKAT版本将Android中自带的chrome中的webkit和Android系统中的webkit替换为Blink537.36。</p>
+<p>而在5.0LOLLIPOP webkit则可以独立于Android OS，使用play services进行更新。随后Blink537.36一直运用在Chrome和Android之后的版本。</p>
+<p>关于上面提到的各个webkit版本的主要更新如下:<br>534.13-&gt;534.30 [4]<br>增加硬件渲染<br>WebGL enabled by default<br>Hardware accelerated 3D CSS<br>New flags: print preview, GPU-accelerated compositing, GPU-accelerated Canvas 2D, Google Native Client, CRX-less Web Apps, Web page prerendering<br>Partially implemented sandboxing of the GPU process<br>Faster JavaScript performance due to incorporation of Crankshaft, an improved compiler for V8<br>GPU accelerated video<br>Run PPAPI Flash in the renderer process</p>
+<p>534.30-&gt;537.36[4]<br>主要是使用了更新的V8引擎，支持HTML5和CSS新特性<br>主资源增加缓存机制。<br>Newer V8 JavaScript engine<br>GPU Accelerated Canvas 2D disabled<br>Hardware-accelerated Canvas2D graphics<br>WebGL without the need of 3D graphics hardware through the software rasterizer SwiftShader<br>Experimental JavaScript Harmony (ECMAScript 6) support<br>Media Stream API (getUserMedia) enabled by default. (E.g. webcam access via JavaScript<br>HTML5 audio/video and WebAudio now support 24-bit PCM wave files<br>Switched to FFmpeg native VP8 decoder<br>Hardware video acceleration with 25% more efficient power consumption in some scenarios<br>Experimental support for CSS custom filters<br>Experimental WebGL, Web Audio, WebRTC support behind flags</p>
+<p>Blink将会包含一些新特性[5]<br>Slmming Paint 对绘制进行瘦身<br>Blink Scheduler 优先级轮转任务队列<br>Olipan 专属的自动垃圾回收器<br>ServiceWorker：Web App离线缓存能力<br>Blink-in-JavaScript: 用JavaScript实现DOM的新特性</p>
+<p>二、WebKit的架构</p>
+<p>这里简要述说一下其架构，首先各个webkit版本，其架构没有多少变化。这里以534.30版本做讲解。其底层可以分为，WebCore、V8、Chromium Net。其中webCore层又包含了网页加载解析所需要的loader、dom、css、html、svg、render、script以及平台相关模块platform。V8引擎直接将js代码编译为机器码，性能优势明显,Chromium-Net是Chrome浏览器源码中抽取出来的网络库。在底层的上面则是JNI层，对底层进行了封装，提供了与Java层的交互接口，在这JNI层之上则是Android Framework中的WebView层。</p>
+<p>三、WebKit工作原理</p>
+<p>WebKit工作原理分为Loader、Parser、Layout、paint四个部分。</p>
+<p>(一)、Loader<br>Loader为资源加载，根据url加载相应资源。首先是资源有两种资源，一个是主资源，就是你加载页面的html，另一个是外链资源，包括CSS/JS/Image。主资源下载失败会有报错提示，而派生资源下载失败则只会显示一个占位符。Loader对此分别设计了MainResourceLoader和SubResourceLoader来处理他们。其都会调用ResouceHandle来将资源加载的请求交给网络模块。</p>
+<p>1.主资源加载</p>
+<p>首先4.4版本之前主资源是没有缓存机制的，请求通过webview.loadUrl或者用户点击页面中的链接发出，后者会在HTMLAnchorElement.cpp中的defaultEventHandler()中进行处理。无论那种都会生成ResourceRequest结构。并会填充Cookie策略，UA，HTTP请求的Header域，随后会调用LoadWithDocumentLoader，在其中会调用PolicyChecker的checkNavigationPolicy进行一些防抖的操作[6],随后会根据是否包含表单走不同的流程，具体流程可以参考<a href="https://book.douban.com/subject/26747312/" target="_blank" rel="external">深入理解Android:WebKit卷</a>，这里不再赘述。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/ Don<span class="string">'t</span> ask more than <span class="keyword">once</span> <span class="keyword">for</span> the same request or <span class="keyword">if</span> we are loading an empty URL.</span><br><span class="line"><span class="comment">// This avoids confusion on the part of the client.</span></span><br><span class="line"><span class="keyword">if</span> (equalIgnoringHeaderFields(request, loader-&gt;lastCheckedRequest()) || (!request.isNull() &amp;&amp; request.url().isEmpty())) &#123;</span><br><span class="line">    function(argument, request, <span class="number">0</span>, <span class="keyword">true</span>);</span><br><span class="line">    loader-&gt;setLastCheckedRequest(request);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意Android4.4删除MainResourceLoader，使用CachedResourceLoader，从memoryCache中加载。</p>
+<p>2.派生资源<br>在解析主资源生成DOM树时，如果遇到&lt;img&gt; &lt;script&gt; &lt;style&gt;等标签时，会创建相应的元素，比如HTMLImageElement，在设置src属性时，会触发图片资源加载，使用类型为HTMLImageLoader的成员变量发起加载资源请求。随后在CacheResourceLoader.requestResource时通过requestForUrl函数查询MemoryCache中的当前url对应的缓存资源。其中注意不同的派生资源有不同的优先级，优先级视其对后续布局及绘制过程的影响而定，一般图片的优先级最低，这就是为什么图片往往在最后显示。这里的缓存使用MemoryCache，保存原始的CSS、JS、图片等数据以及解码过的数据，对于相同的URL资源直接从缓存中获取。MemoryCache对象与浏览器同生命周期，浏览器启动时创建，关闭时释放全部资源。PageCache存储的是DOM树和Render树的数据结构，用来进行前进后退时快速显示页面。如果用户在地址栏输入url或点击链接，则页面仍然通过网络加载而不是走PageCache。</p>
+<p>下面为memoryCache的结构图[7]</p>
+<p><img src="/assets/images/webkit/memorycache.png" alt="MemoryCache"></p>
+<p>m_resouces为HashMap<string,cachedresource>，key为url，value为CachedResource对象的指针。CachedResource是个双链表，由LRUList结构体维护。m_allResources负责管理系统的所有LRUList。资源尺寸越大、访问次数越少，处于的Vector的坐标越大。CachedResource分为live和dead两类。live表示有网页引用的资源解码后的数据，dead资源表示没有网页引用的资源数据和资源解码后的数据。在Android平台会直接释放，在IOS平台，则会将dead的解码后的数据放在Purgebale Buffer中维护一段时间，这样可以减少了因回收内存造成的资源重取。资源回收函数prune，只有资源超过了本身容量（默认为8M）的95%才会进行回收，会调用pruneDeadResources从m_allResources的末尾进行回收，直到资源占据的空间不再超限，并调用pruneLiveResources函数从m_liveDecodedResources链表的末尾开始回收资源，直到剩余所有资源都在1s的时间内被访问过</string,cachedresource></p>
+<p>其中上面提到的这些数值和函数可以参见相应源码MemoryCache.cpp[8]</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> cDefaultCacheCapacity = <span class="number">8192</span> * <span class="number">1024</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">double</span> cMinDelayBeforeLiveDecodedPrune = <span class="number">1</span>; <span class="comment">// Seconds.</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">float</span> cTargetPrunePercentage = <span class="number">.95</span>f; <span class="comment">// Percentage of capacity toward which we prune, to avoid immediately pruning again.</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="literal">void</span> <span class="attribute">MemoryCache</span>::prune()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (m_liveSize + m_deadSize &lt;= m_capacity &amp;&amp; m_maxDeadCapacity &amp;&amp; m_deadSize &lt;= m_maxDeadCapacity) <span class="pi">// Fast path.</span><br><span class="line">        return;</span><br><span class="line">        </span><br><span class="line">    pruneDeadResources(); //</span> Prune dead first, <span class="keyword">in</span> <span class="keyword">case</span> <span class="literal">it</span> was <span class="string">"borrowing"</span> capacity <span class="keyword">from</span> live.</span><br><span class="line">    pruneLiveResources();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> MemoryCache::pruneDeadResources()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!m_pruneEnabled)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> capacity = deadCapacity();</span><br><span class="line">    <span class="keyword">if</span> (capacity &amp;&amp; m_deadSize &lt;= capacity)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> targetSize = <span class="keyword">static_cast</span>&lt;<span class="keyword">unsigned</span>&gt;(capacity * cTargetPrunePercentage); <span class="comment">// Cut by a percentage to avoid immediately pruning again.</span></span><br><span class="line">    pruneDeadResourcesToSize(targetSize);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> MemoryCache::pruneLiveResources()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!m_pruneEnabled)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> capacity = liveCapacity();</span><br><span class="line">    <span class="keyword">if</span> (capacity &amp;&amp; m_liveSize &lt;= capacity)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> targetSize = <span class="keyword">static_cast</span>&lt;<span class="keyword">unsigned</span>&gt;(capacity * cTargetPrunePercentage); <span class="comment">// Cut by a percentage to avoid immediately pruning again.</span></span><br><span class="line">    pruneLiveResourcesToSize(targetSize);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(二)、Parser<br>Parser就是构建js脚本以及网页渲染所需要的DOM、Render、RenderLayer树的过程。[9]</p>
+<p><img src="/assets/images/webkit/three-tree.png" alt="ThreeTree"></p>
+<p>Dom是html节点，Render节点则是根节点或者可视的Dom的节点。而RenderLayer则是为了真正绘制而创建的节点，webkit会为特定的节点创建RenderLayout，包含[9]<br>the root object for the page<br>It has explicit CSS position properties (relative, absolute or a transform)<br>It is transparent<br>Has overflow, an alpha mask or reflection<br>Has a CSS filter<br>Corresponds to &lt; canvas&gt; element that has a 3D (WebGL) context or an accelerated 2D context<br>Corresponds to a &lt; video&gt; element<br>!hasAutoIndex</p>
+<p>其他节点则会从属于其父节点中的RenderLayer节点。在绘制时，引擎会遍历layer树，访问每一个 RenderLayer再遍历从属于这个RenderLayer的RenderObject，将每一个RenderObject绘制出来。RenderLayer树决定了网页绘制的层次顺序，而从属于RenderLayer的RenderObject决定了这层的内容，所有的RenderLayer和RenderObject一起就决定了网页在屏幕上最终呈现出来的内容。[9]</p>
+<p>1、DOM树的创建</p>
+<p>DOM树的创建分成了解码、分词、构建的过程，首先是解码，调用DecodedDataDocumentParser.appendBytes方法，并会在其中调用TextResourceDecoder解码Loader模块传来的字节流，解码完成后传入到HTMLDocumentParser包含的HTMLInputStream中。随后调用HTMLTokenizer来进行分词，将HTMLInputStream中的Unicode字符流切成HTMLToken，切分过程是通过正则表达式来完成，具体可查询HTMLTokenizer的nextToken方法。</p>
+<p>随后在processToken()方法中根据token的类别生成对应的节点。随后调用HTMLConstructionSite的attachToCurrent函数连接到DOM树上。具体连接的方式是通过当前节点的parserAddChild()函数，将新建节点和当前节点关联起来。</p>
+<p>2.Render树的创建<br>Render树与DOM树是同时创建的。在上面提到的HTMLConstructionSite的attachToCurrent方法中，会调用到attach方法，在其中会调用createRendererIfNeeded函数，在进行HTML解析时如果遇到了派生资源，比如css，则会进行loader，并进行CSS解析。CSS解析过程即是将原始的CSS文件中包含的一系列CSS规则标识成WebKit中相应规则类的实例过程。Document类中存在StyleSheetList实例，其中保存了多个CSSStyleSheet列表。一个CSSStyleSheet包含一个CSSRuleList，其中又包含多个CSSRule。一个CSSRule为CSS规则，其将CSS选择器和CSS属性分别表示为CSSSelector和CSSProperty。</p>
+<p>css解析完成以后，便会回到renderObject中，在其中通过CSSStyleSelector的styleForElement函数来进行CSS规则匹配为相应的Render节点创建RenderStyle实例，有了RenderStyle实例后，才可以创建RenderObject。这就是为什么我们需要把css资源放在html最上面，我们需要保证在生成renderObject的时候已经存在css，如果此时还没有加载完成，浏览器就会显示不含css的页面。</p>
+<p>3.RenderLayer树的创建<br>RenderLayout树的创建过程类似Render树的创建过程，只是需要符合某些规则，这里不再赘述。</p>
+<p>(三)、Layout<br>包含根据子元素计算大小和根据margin top等计算位置，感兴趣的同学可以参见RenderBlock、RenderBlockLineLayout这两个类</p>
+<p>(四)、Paint<br>webView绘制分为更新内部缓存，将网页内容绘制到内部缓存（通过请求SurfaceFlinger创建一个surface用来绘图）中，这一步我们叫他绘制，<br>第二步是将内部缓存拷贝到窗口缓存上，同时负责位移，缩放，旋转，Alpha混合，这一步我们叫他混合。</p>
+<p>在webview中，一般第一步绘制只会绘制屏幕大小的区域，如果我们滚动，则会绘制新的可见区域。浏览器可以选择多线程的渲染架构，将绘制的步骤放在另外一个线程。<br>浏览器可以根据性能与效果之间选择，使用同步，部分同步，完全异步的方式，如果使用完全异步的方式就是，当浏览器需要将 WebView 缓存拷贝到窗口缓存，但是需要更新的部分还没有来得及绘制时，浏览器可以在还未及时更新的部分绘制一个背景色或者空白，这样虽然渲染效果有所下降，但是保证了每一帧窗口更新的间隔都在理想的范围内。并且浏览器还可以为 WebView 创建一个更大的缓存，超过 WebView本身的大小，让我们可以缓存更多的网页内容，可以预先绘制不可见的区域，这样就可以有效减少异步模式下出现空白的状况，在性能和效果之间取得更好的平衡。[9]</p>
+<p>以上的方式是使用软件来进行绘制和渲染，就是使用CPU来完成绘制和混合。我们可以使用硬件渲染，但是硬件渲染，或者说硬件加速，只是在第二步骤的混合中使用GPU来进行混合，这是因为GPU更适合缩放、旋转、Alpha混合这些操作。</p>
+<p>在多线程渲染模式下，因为绘制和混合分别处于不同的线程，绘制使用CPU，混合使用GPU，这样可以通过CPU/GPU之间的并发运行有效地提升浏览器整体的渲染性能</p>
+<p>此外还有图层混合加速，这是Apple引入Webkit的，之前非混合加速的渲染架构，所有的RenderLayer都没有自己独立的缓存。它们都被绘制到同一块缓存里面，而苹果提出的图层混合加速就是为一些RenderLayer都提供一块独立的缓存。WebKit会为这些RenderLayer创建对应的GraphicsLayer，不同的浏览器需要提供自己的GrphicsLayer实现用于管理缓存的分配，释放，更新等等。拥有GrphicsLayer的RenderLayer会被绘制到自己的缓存里面，而没有GrphicsLayer的RenderLayer它们会向上追溯有GrphicsLayer的父/祖先RenderLayer，直到RootRenderLayer为止，然后绘制在有GrphicsLayer的父/祖先RenderLayer的缓存上，而RootRenderLayer 总是会创建一个 GrphicsLayer 并拥有自己独立的缓存[9]</p>
+<p>RenderLayer生成GraphicsLayer的条件。[9]<br>Layer has 3D or perspective transform CSS properties<br>Layer is used by &lt; video&gt; element using accelerated video decoding<br>Layer is used by a &lt; canvas&gt; element with a 3D context or accelerated 2D context<br>Layer is used for a composited plugin<br>Layer uses a CSS animation for its opacity or uses an animated webkit transform<br>Layer uses accelerated CSS filters<br>Layer with a composited descendant has information that needs to be in the composited layer tree, such as a clip or reflection<br>Layer has a sibling with a lower z-index which has a compositing layer (in other words the layer is rendered on top of a composited layer)</p>
+<p>所以，如果是那些需要频繁更新的页面元素，我们可以考虑使用一些属性使其成为RenderLayer，这样其就拥有一块独立的缓存，这样更新就会更快。</p>
+<p>软硬件渲染的具体过程可以参考<a href="https://book.douban.com/subject/26747312/" target="_blank" rel="external">深入理解Android:WebKit卷</a>。</p>
+<p>四、Android Framework WebView<br>参考<a href="https://book.douban.com/subject/26747312/" target="_blank" rel="external">深入理解Android:WebKit卷</a>。</p>
+<p>本节介绍Android Framework WebView中的主要类和主要结构以及初始化和加载url等的具体工作过程</p>
+<p>(一)、WebView主要类<br>WebView API中有四个主要的类<br>WebView 继承自View,为用户提供一个可以加载显示HTML网页资源的UI控件<br>WebSettings WebView的设置类，比如是否禁止网络，是否禁止下载图片资源等。<br>WebViewClient 定义了WebView浏览事件的回掉接口，比如onPageStarted，onPageFinished等事件，当WebView在资源加载、页面访问过程中出现资源错误等事件时也会触发相应接口。<br>WebChromeClient定义了Javascript的对话框、网站图标、网站title、加载进度等接口。</p>
+<p>(二)、WebView主要结构<br>AndroidFrame中的WebView会涉及两个线程（在C++层还有更多的线程，比如网络资源加载线程、负责绘制的线程、负责读写的线程、负责媒体资源编解码的线程）<br>一个为WebView线程(UI线程)，一个为WebViewCore线程（工作线程）涉及的核心类包含WebViewCore、CallbackProxy和BrowserFrame<br>WebViewCore为WebView类在工作线程中的代理，CallbackProxy则专门为工作线程向UI线程发起事件消息回调而用。BrowserFrame则相当于是C++层中的WebCore中WebFrame对象的java层封装。BrowserFrame和WebFrame之间通过JNI来进行相互调用。 </p>
+<p>(三)、WebView初始化和loadUrl的过程</p>
+<p>初始化流程<br>1.new WebView，加载libWebCore.so动态库，<br>调用ensureProviderCreated()创建WebViewClassic。<br>2.在WebViewClassic中创建WebViewCore，mCallbackProxy(其为handler的子类，也就是创建了一个绑定UI线程的消息队列)<br>3.在创建WebViewCore中，会检查静态成员sWebCoreHandler是否为空，如果为空则创建WebCoreThread线程，并创建一个绑定工作线程的消息队列。<br>同时调用WebViewCore.initialize方法创建mBrowseFrame成员变量，并给webViewClassic发送消息通知WebViewCore层已经初始化完毕。<br>WebViewClassic收到消息后创建C++层的webview对象。<br>4.BrowseFrame中初始化一些CacheManager，CookieManager，PluginManager。调用createFrame方法中创建WebFrame。在WebFrame中会初始化JS脚本控制器和Chromium-Net网络库等。</p>
+<p>loadUrl流程<br>1.WebView对象调用loadUrl方法，并给webViewCore线程的消息队列发送LOAD_URL消息。<br>2.WebViewCore对象的handler收到消息以后就开始在webviewCore线程调用mBrowswerFrame的loadUrl来处理。<br>3.该类调用JNI函数的nativeLoadUrl函数，该函数调用WebCore的FrameLoader的load函数来进行WebKit加载网页过程。<br>4.该FrameLoader的实现类FrameLoaderAndroid确定canHandlerRequest收或收到provisionalLoadStarted调用后触发WebFrame的loadStarted函数。<br>5.该函数会通过JNI调用BrowserFrame的loadStarted函数，并会触发mCallbackProxy对象的onPageStarted回调，该调用会生成PAGE_STARTED消息，并发送给handleMessage消息处理函数，该函数触发webview和webviewclient的onPageStarted回调。</p>
+<p>五、Android WebView内存泄露问题<br>webview写在xml中引起的内存泄露，即使在activity finish时调用webview.destory()以及webview=null仍然会导致webview所在的acivity不能被正常回收。</p>
+<p><img src="/assets/images/webkit/memory-leak-1.png" alt="MemoryLeak1"><br>这个bug目前官方仍然没有被解决。如果我们的webview中没有使用dialog的话可以在代码中初始化webview。</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">webView = new WebView<span class="list">(<span class="keyword">getApplicationContext</span><span class="list">()</span>)</span><span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>但是在存在dialog的情况会造成崩溃。还有一些反射的方法，但都不能完全解决该问题[10]</p>
+<p><img src="/assets/images/webkit/memory-leak-2.png" alt="MemoryLeak2"><br>在WebView中使用软键盘造成的内存泄露，该问题已经在[11]下面的提交被修复。</p>
+<p>除了上面说到的问题以外，还有很多webview内存泄露问题，如下</p>
+<p><img src="/assets/images/webkit/memory-leak-3.png" alt="MemoryLeak3"></p>
+<p><img src="/assets/images/webkit/memory-leak-4.png" alt="MemoryLeak4"></p>
+<p>目前的解决方式，加载webview时启用单独进程，在该页面退出以后直接调用System.exit(0)退出虚拟机，释放所有资源[12]</p>
+<p>参考文献<br>[1]<a href="https://zh.wikipedia.org/wiki/WebKit" target="_blank" rel="external">https://zh.wikipedia.org/wiki/WebKit</a><br>[2]<a href="http://jimbergman.net/webkit-version-in-android-version/" target="_blank" rel="external">http://jimbergman.net/webkit-version-in-android-version/</a><br>[3]<a href="https://en.wikipedia.org/wiki/Blink_(web_engine" target="_blank" rel="external">https://en.wikipedia.org/wiki/Blink_(web_engine</a>)<br>[4]<a href="https://en.wikipedia.org/wiki/Google_Chrome_release_history" target="_blank" rel="external">https://en.wikipedia.org/wiki/Google_Chrome_release_history</a><br>[5]<a href="http://blog.csdn.net/hongbomin/article/details/41091679" target="_blank" rel="external">http://blog.csdn.net/hongbomin/article/details/41091679</a><br>[6]<a href="https://chromium.googlesource.com/external/Webkit/+/master/Source/WebCore/loader/PolicyChecker.cpp" target="_blank" rel="external">https://chromium.googlesource.com/external/Webkit/+/master/Source/WebCore/loader/PolicyChecker.cpp</a><br>[7]<a href="http://m.blog.csdn.net/article/details?id=7757923" target="_blank" rel="external">http://m.blog.csdn.net/article/details?id=7757923</a><br>[8]<a href="https://chromium.googlesource.com/external/Webkit/+/master/Source/WebCore/loader/cache/MemoryCache.cpp" target="_blank" rel="external">https://chromium.googlesource.com/external/Webkit/+/master/Source/WebCore/loader/cache/MemoryCache.cpp</a><br>[9]<a href="http://tech.uc.cn/?p=2763" target="_blank" rel="external">http://tech.uc.cn/?p=2763</a><br>[10]<a href="http://stackoverflow.com/questions/3130654/memory-leak-in-webview" target="_blank" rel="external">http://stackoverflow.com/questions/3130654/memory-leak-in-webview</a><br>[11]<a href="https://chromium.googlesource.com/chromium/src/+/fcc3fbf1652285b2a89eabd092d35d0fdf199ac2" target="_blank" rel="external">https://chromium.googlesource.com/chromium/src/+/fcc3fbf1652285b2a89eabd092d35d0fdf199ac2</a><br>[12]<a href="http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak/" target="_blank" rel="external">http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak/</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/WebKit/">WebKit</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/09/09/Thread学习/"  data-tooltip="The scheduler and communication of thread">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/11/RxJava学习/" data-tooltip="RxJava学习笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/09/09/Thread学习/"  data-tooltip="The scheduler and communication of thread">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/11/RxJava学习/" data-tooltip="RxJava学习笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/07/25/WebKit学习/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

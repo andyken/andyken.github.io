@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Android View 源码研究及相关知识总结（一） - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="在本篇博客中对Android View进行一些总结。包括View的生命周期、手势事件、优化等内容。这里为第一部分。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Android View 源码研究及相关知识总结（一）">
+<meta property="og:url" content="http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="在本篇博客中对Android View进行一些总结。包括View的生命周期、手势事件、优化等内容。这里为第一部分。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/the-process-of-view/opticalBounds.png">
+<meta property="og:updated_time" content="2015-12-14T03:37:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android View 源码研究及相关知识总结（一）">
+<meta name="twitter:description" content="在本篇博客中对Android View进行一些总结。包括View的生命周期、手势事件、优化等内容。这里为第一部分。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Android View 源码研究及相关知识总结（一）
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Nov 05 2015 00:00:00 GMT+0800">
+	
+		    11月 05, 2015
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>在本篇博客中对Android View进行一些总结。包括View的生命周期、手势事件、优化等内容。这里为第一部分。</p>
+<a id="more"></a>
+<p>一、生命周期</p>
+<p>整体流程如下<br>Constructor-&gt;onAttachedToWindow()-&gt;measure()-&gt;onMeasure()-&gt;layout()-&gt;onLayout()-&gt;dispatchDraw()-&gt;draw()-&gt;onDraw()</p>
+<p>如果我们调用requestLayout时，则从measure重新开始调用，如果我们调用invalidate，那么就从dispatchDraw重新开始调用。</p>
+<p>二、onAttachedToWindow</p>
+<p>该方法在view依附于window时被调用，此时，view已经拥有了surface并且准备开始进行绘制了。这里提到的surface，其定义为Handle onto a raw buffer that is being managed by the screen compositor[1]，也就是屏幕生成器管理的原始缓冲区的句柄，用这个句柄可以获得用来画图的canvas以及存放当前窗口缓冲数据的原始缓冲区。这里的屏幕生成器概念比较底层，比较典型的屏幕生成器有SurfaceFlinger和Skia，SurfaceFlinger是唯一一个可以修改显示内容的服务，SurfaceFlinger使用OpenGL和Hardware Composer去管理surface[2]。其中，OpenGL是Open Graphics Library。它是一个跨平台的API规范，包含了一系列规范的3D graphics接口。而OpenGL ES则是为OpenGL嵌入式设备设计的规范[3]。每个window都对应一个Surface，而每个view都要画在这个surface上。同时注意surfaceView，不同于surface，surfaceView是一个具体的view，他和view的具体差别在于surfaceView并不是在主线程上进行绘制，他是另起一个线程进行绘制。</p>
+<p>三、Measure</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> final <span class="keyword">void</span> <span class="title">measure</span><span class="params">(<span class="keyword">int</span> widthMeasureSpec, <span class="keyword">int</span> heightMeasureSpec)</span> </span>&#123;</span><br><span class="line">    boolean optical = isLayoutModeOptical(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">if</span> (optical != isLayoutModeOptical(mParent)) &#123;</span><br><span class="line">        Insets insets = getOpticalInsets();</span><br><span class="line">        <span class="keyword">int</span> oWidth  = insets.left + insets.right;</span><br><span class="line">        <span class="keyword">int</span> oHeight = insets.top  + insets.bottom;</span><br><span class="line">        widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);</span><br><span class="line">        heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Suppress sign extension for the low bytes</span></span><br><span class="line">    <span class="keyword">long</span> key = (<span class="keyword">long</span>) widthMeasureSpec &lt;&lt; <span class="number">32</span> | (<span class="keyword">long</span>) heightMeasureSpec &amp; <span class="number">0xffffffff</span>L;</span><br><span class="line">    <span class="keyword">if</span> (mMeasureCache == null) mMeasureCache = <span class="keyword">new</span> LongSparseLongArray(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((mPrivateFlags &amp; PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ||</span><br><span class="line">            widthMeasureSpec != mOldWidthMeasureSpec ||</span><br><span class="line">            heightMeasureSpec != mOldHeightMeasureSpec) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// first clears the measured dimension flag</span></span><br><span class="line">        mPrivateFlags &amp;= ~PFLAG_MEASURED_DIMENSION_SET;</span><br><span class="line"></span><br><span class="line">        resolveRtlPropertiesIfNeeded();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> cacheIndex = (mPrivateFlags &amp; PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -<span class="number">1</span> :</span><br><span class="line">                mMeasureCache.indexOfKey(key);</span><br><span class="line">        <span class="keyword">if</span> (cacheIndex &lt; <span class="number">0</span> || sIgnoreMeasureCache) &#123;</span><br><span class="line">            <span class="comment">// measure ourselves, this should set the measured dimension flag back</span></span><br><span class="line">            onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line">            mPrivateFlags3 &amp;= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">long</span> value = mMeasureCache.valueAt(cacheIndex);</span><br><span class="line">            <span class="comment">// Casting a long to int drops the high 32 bits, no mask needed</span></span><br><span class="line">            setMeasuredDimension((<span class="keyword">int</span>) (value &gt;&gt; <span class="number">32</span>), (<span class="keyword">int</span>) value);</span><br><span class="line">            mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// flag not set, setMeasuredDimension() was not invoked, we raise</span></span><br><span class="line">        <span class="comment">// an exception to warn the developer</span></span><br><span class="line">        <span class="keyword">if</span> ((mPrivateFlags &amp; PFLAG_MEASURED_DIMENSION_SET) != PFLAG_MEASURED_DIMENSION_SET) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"onMeasure() did not set the"</span></span><br><span class="line">                    + <span class="string">" measured dimension by calling"</span></span><br><span class="line">                    + <span class="string">" setMeasuredDimension()"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mOldWidthMeasureSpec = widthMeasureSpec;</span><br><span class="line">    mOldHeightMeasureSpec = heightMeasureSpec;</span><br><span class="line"></span><br><span class="line">    mMeasureCache.put(key, ((<span class="keyword">long</span>) mMeasuredWidth) &lt;&lt; <span class="number">32</span> |</span><br><span class="line">            (<span class="keyword">long</span>) mMeasuredHeight &amp; <span class="number">0xffffffff</span>L); <span class="comment">// suppress sign extension</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要用来测量view的宽和高，<br>该方法有widthMeasureSpec和heightMeasureSpec两个参数。该参数为大小和模式的规格。其运算逻辑为</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> makeMeasureSpec(<span class="keyword">int</span> <span class="keyword">size</span>, <span class="keyword">int</span> mode) &#123;</span><br><span class="line">    <span class="keyword">if</span> (sUseBrokenMakeMeasureSpec) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">size</span> + mode;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">size</span> &amp; ~MODE_MASK) | (mode &amp; MODE_MASK);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MODE_SHIFT = <span class="number">30</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MODE_MASK  = <span class="number">0x3</span> &lt;&lt; MODE_SHIFT;</span><br></pre></td></tr></table></figure>
+<p>也就是将二进制11左移30位，一共32位。将大小size存放在后面30位中，将模式mode存放在头2位中。在取该相应内容时，直接取之前该32位的前2位或者后30位。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">int</span> <span class="title">getMode</span><span class="params">(<span class="keyword">int</span> measureSpec)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">return</span> (measureSpec &amp; MODE_MASK);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">int</span> <span class="title">getSize</span><span class="params">(<span class="keyword">int</span> measureSpec)</span> </span>&#123;</span><br><span class="line">     <span class="keyword">return</span> (measureSpec &amp; ~MODE_MASK);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">boolean</span> optical = isLayoutModeOptical(<span class="keyword">this</span>);</span><br><span class="line"><span class="keyword">if</span> (optical != isLayoutModeOptical(mParent)) &#123;</span><br><span class="line">    Insets insets = getOpticalInsets();</span><br><span class="line">    <span class="keyword">int</span> oWidth  = insets.left + insets.right;</span><br><span class="line">    <span class="keyword">int</span> oHeight = insets.top  + insets.bottom;</span><br><span class="line">    widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);</span><br><span class="line">    heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这一段就是根据android:layoutMode来调整宽度和高度。如果layoutMode是使用opticalBounds视觉边界.</p>
+<p>关于视觉边界的内容参考这里[5].</p>
+<p>For views that contain nine-patch background images, you can now specify that they should be aligned with neighboring views based on the “optical” bounds of the background image rather than the “clip” bounds of the view.<br>For example, figures 1 and 2 each show the same layout, but the version in figure 1 is using clip bounds (the default behavior), while figure 2 is using optical bounds. Because the nine-patch images used for the button and the photo frame include padding around the edges, they don’t appear to align with each other or the text when using clip bounds.</p>
+<p><img src="/assets/images/the-process-of-view/opticalBounds.png" alt="opticalBounds"></p>
+<p>mPrivateFlags mPrivateFlags2 mPrivateFlags3 为三个32位int值。代表各种View的状态。</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">if <span class="list">(<span class="list">(<span class="keyword">mPrivateFlags</span> &amp; PFLAG_FORCE_LAYOUT)</span> == PFLAG_FORCE_LAYOUT || widthMeasureSpec != mOldWidthMeasureSpec || heightMeasureSpec != mOldHeightMeasureSpec)</span></span><br></pre></td></tr></table></figure>
+<p>当我们调用forceLayout方法或者当前的规格和之前规格不一样时，进入到if内部。</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">resolveRtlPropertiesIfNeeded()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>如果需要我们支持从右往左的布局，则在这里进行属性转换。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> cacheIndex = (mPrivateFlags &amp; PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT ? -<span class="number">1</span> : mMeasureCache.indexOfKey(key);</span><br></pre></td></tr></table></figure>
+<p>如果是强制layout或者在mMeasureCache（下面介绍）中不存在之前存放的规格参数或者sIgnoreMeasureCache标志位为true（该标志位代表忽略使用measure缓存，该标志位存在如下赋值关系</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">sIgnoreMeasureCache = targetSdkVersion &lt; KITKAT; 当小于<span class="number">4.4</span>时该标志为<span class="literal">false</span>）</span><br><span class="line"><span class="keyword">if</span> (cacheIndex &lt; <span class="number">0</span> || sIgnoreMeasureCache) &#123;</span><br><span class="line">    <span class="comment">// measure ourselves, this should set the measured dimension flag back</span></span><br><span class="line">    onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line">    mPrivateFlags3 &amp;= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">long</span> value = mMeasureCache.valueAt(cacheIndex);</span><br><span class="line">    <span class="comment">// Casting a long to int drops the high 32 bits, no mask needed</span></span><br><span class="line">    setMeasuredDimension((<span class="keyword">int</span>) (value &gt;&gt; <span class="number">32</span>), (<span class="keyword">int</span>) value);</span><br><span class="line">    mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>时调用onMeasure方法，否则直接调用setMeasuredDimension方法。</p>
+<p>首先是onMeasure方法：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">protected void <span class="function">onMeasure</span>(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">    <span class="function">setMeasuredDimension</span>(<span class="function">getDefaultSize</span>(<span class="function">getSuggestedMinimumWidth</span>(), widthMeasureSpec),</span><br><span class="line">            <span class="function">getDefaultSize</span>(<span class="function">getSuggestedMinimumHeight</span>(), heightMeasureSpec));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>同样也是调用setMeasuredDimension方法 但是此时的方法传入的参数首先经过getDefaultSize方法进行转换。</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">static</span> <span class="type">int</span> getDefaultSize(<span class="type">int</span> size, <span class="type">int</span> measureSpec) &#123;</span><br><span class="line">    <span class="type">int</span> <span class="literal">result</span> = size;</span><br><span class="line">    <span class="type">int</span> specMode = <span class="type">MeasureSpec</span>.getMode(measureSpec);</span><br><span class="line">    <span class="type">int</span> specSize = <span class="type">MeasureSpec</span>.getSize(measureSpec);</span><br><span class="line"></span><br><span class="line">    switch (specMode) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">MeasureSpec</span>.<span class="type">UNSPECIFIED</span>:</span><br><span class="line">        <span class="literal">result</span> = size;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="type">MeasureSpec</span>.<span class="type">AT_MOST</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="type">MeasureSpec</span>.<span class="type">EXACTLY</span>:</span><br><span class="line">        <span class="literal">result</span> = specSize;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">result</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法会根据规格实际确定真实的size</p>
+<p>MeasureSpec.EXACTLY是精确尺寸，当我们将控件的layout_width或layout_height指定为具体数值时如andorid:layout_width=”50dip”，或者为FILL_PARENT是，都是控件大小已经确定的情况，都是精确尺寸。<br>MeasureSpec.AT_MOST是最大尺寸，当控件的layout_width或layout_height指定为WRAP_CONTENT时，控件大小一般随着控件的子空间或内容进行变化，此时控件尺寸只要不超过父控件允许的最大尺寸即可。因此，此时的mode是AT_MOST，size给出了父控件允许的最大尺寸。<br>MeasureSpec.UNSPECIFIED是未指定尺寸，这种情况不多，一般都是父控件是AdapterView，通过measure方法传入的模式[6]。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="typename">void</span> setMeasuredDimension(<span class="typename">int</span> measuredWidth, <span class="typename">int</span> measuredHeight) &#123;</span><br><span class="line">    <span class="typename">boolean</span> optical = isLayoutModeOptical(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">if</span> (optical != isLayoutModeOptical(mParent)) &#123;</span><br><span class="line">        Insets insets = getOpticalInsets();</span><br><span class="line">        <span class="typename">int</span> opticalWidth  = insets.left + insets.right;</span><br><span class="line">        <span class="typename">int</span> opticalHeight = insets.top  + insets.bottom;</span><br><span class="line"></span><br><span class="line">        measuredWidth  += optical ? opticalWidth  : -opticalWidth;</span><br><span class="line">        measuredHeight += optical ? opticalHeight : -opticalHeight;</span><br><span class="line">    &#125;</span><br><span class="line">    mMeasuredWidth = measuredWidth;</span><br><span class="line">    mMeasuredHeight = measuredHeight;</span><br><span class="line"></span><br><span class="line">    mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法实际上是存储宽和高的值</p>
+<p>若调用到setMeasuredDimension((int) (value &gt;&gt; 32), (int) value); 则从measureCache中取出相应值传入。该值是将mMeasuredWidth左移32位 并转换为long型 然后将mMeasuredHeight 存放在该64位long型的低32位。</p>
+<p>还有注意到mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT; 该变量意味着我们在layout之前还要再进行一次onMeasure。</p>
+<p>四、Layout</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">layout</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> t, <span class="keyword">int</span> r, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> ((mPrivateFlags3 &amp; PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT) != <span class="number">0</span>) &#123;</span><br><span class="line">        onMeasure(mOldWidthMeasureSpec, mOldHeightMeasureSpec);</span><br><span class="line">        mPrivateFlags3 &amp;= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> oldL = mLeft;</span><br><span class="line">    <span class="keyword">int</span> oldT = mTop;</span><br><span class="line">    <span class="keyword">int</span> oldB = mBottom;</span><br><span class="line">    <span class="keyword">int</span> oldR = mRight;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">boolean</span> changed = isLayoutModeOptical(mParent) ?</span><br><span class="line">            setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (changed || (mPrivateFlags &amp; PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) &#123;</span><br><span class="line">        onLayout(changed, l, t, r, b);</span><br><span class="line">        mPrivateFlags &amp;= ~PFLAG_LAYOUT_REQUIRED;</span><br><span class="line"></span><br><span class="line">        ListenerInfo li = mListenerInfo;</span><br><span class="line">        <span class="keyword">if</span> (li != <span class="keyword">null</span> &amp;&amp; li.mOnLayoutChangeListeners != <span class="keyword">null</span>) &#123;</span><br><span class="line">            ArrayList&lt;OnLayoutChangeListener&gt; listenersCopy =</span><br><span class="line">                    (ArrayList&lt;OnLayoutChangeListener&gt;)li.mOnLayoutChangeListeners.clone();</span><br><span class="line">            <span class="keyword">int</span> numListeners = listenersCopy.size();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numListeners; ++i) &#123;</span><br><span class="line">                listenersCopy.get(i).onLayoutChange(<span class="keyword">this</span>, l, t, r, b, oldL, oldT, oldR, oldB);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mPrivateFlags &amp;= ~PFLAG_FORCE_LAYOUT;</span><br><span class="line">    mPrivateFlags3 |= PFLAG3_IS_LAID_OUT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先查看参数mPrivateFlags3中的标志位PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT 看该标志位是否为1，如果为1，则代表在layout之前还需要再次measure，然后判断layoutMode是否为opticalBounds模式，再分别调用setOptical或者setFrame来判断是否发生了变化，如果发生了变化则才能调用下面的onlayout方法，随后同上面，首先查看变量中mPrivateFlags 的PFLAG_LAYOUT_REQUIRED是否为1 如果为true，则开始调用onLayout方法。该onLayout为空，实际上它是在ViewGroup的各种子类中实现的。因为onlayout的过程就是为了确定视图在布局中的位置，即父视图决定子视图的显示位置[7]。然后是执行</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (li != <span class="keyword">null</span> &amp;&amp; li.mOnLayoutChangeListeners != <span class="keyword">null</span>) &#123;</span><br><span class="line">    ArrayList&lt;OnLayoutChangeListener&gt; listenersCopy =</span><br><span class="line">            (ArrayList&lt;OnLayoutChangeListener&gt;)li.mOnLayoutChangeListeners.clone();</span><br><span class="line">    <span class="built_in">int</span> numListeners = listenersCopy.<span class="built_in">size</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; numListeners; ++i) &#123;</span><br><span class="line">        listenersCopy.<span class="built_in">get</span>(i).onLayoutChange(<span class="keyword">this</span>, l, t, r, b, oldL, oldT, oldR, oldB);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也就是注册的layoutChange函数，但是这里为什么要使用clone呢？我是这样理解的，我们不能将这种监听器直接暴露在外，所以考虑使用clone的方式。</p>
+<p>五、Draw<br>draw方法较长，这里不再贴出。注意到该方法的注释给出了draw的步骤。</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">/<span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Draw traversal performs several drawing steps which must be executed</span><br><span class="line"> <span class="keyword">*</span> in the appropriate order:</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span>      1. Draw the background</span><br><span class="line"> <span class="keyword">*</span>      2. If necessary, save the canvas' layers to prepare for fading</span><br><span class="line"> <span class="keyword">*</span>      3. Draw view's content</span><br><span class="line"> <span class="keyword">*</span>      4. Draw children</span><br><span class="line"> <span class="keyword">*</span>      5. If necessary, draw the fading edges and restore layers</span><br><span class="line"> <span class="keyword">*</span>      6. Draw decorations (scrollbars for instance)</span><br><span class="line"> <span class="keyword">*</span>/</span><br></pre></td></tr></table></figure>
+<p>首先绘制背景区域<br>首先得到用户传入的背景相关的图片或者颜色，也就是这里的final Drawable background = mBackground;<br>然后调用Drawable的draw方法来完成绘制背景工作。</p>
+<p>然后draw方法和dispatchDraw方法。</p>
+<figure class="highlight mel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Step 3, draw the content</span></span><br><span class="line">   <span class="keyword">if</span> (!dirtyOpaque) onDraw(<span class="keyword">canvas</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Step 4, draw the children</span></span><br><span class="line">   dispatchDraw(<span class="keyword">canvas</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Step 6, draw decorations (scrollbars)</span></span><br><span class="line">   onDrawScrollBars(<span class="keyword">canvas</span>);</span><br></pre></td></tr></table></figure>
+<p>这里和上面layout同理，也是在具体的子类中实现。<br>然后是最后一步，绘制滚动条。</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">onDrawScrollBars<span class="list">(<span class="keyword">canvas</span>)</span><span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>draw方法最重要的部分就是在canvas上面进行绘制了。<br>canvas方法包含</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">canvas</span><span class="class">.drawLine</span>();</span><br><span class="line"><span class="tag">canvas</span><span class="class">.drawBitmap</span>();</span><br><span class="line"><span class="tag">canvas</span><span class="class">.drawCircle</span>();</span><br><span class="line"><span class="tag">canvas</span><span class="class">.drawRect</span>();</span><br><span class="line"><span class="tag">canvas</span><span class="class">.drawPath</span>();</span><br><span class="line"><span class="tag">canvas</span><span class="class">.drawBitmap</span>();</span><br></pre></td></tr></table></figure>
+<p>以及一些较为复杂的函数比如</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">canvas</span><span class="class">.drawArc</span>(<span class="tag">rectF</span>, <span class="tag">startAngle</span>, <span class="tag">sweepAngle</span>, <span class="tag">false</span>, <span class="tag">paint</span>);</span><br><span class="line"><span class="tag">canvas</span><span class="class">.clipPath</span>(<span class="tag">path</span>, <span class="tag">Region</span><span class="class">.Op</span><span class="class">.REPLACE</span>);</span><br><span class="line"><span class="tag">canvas</span><span class="class">.clipRect</span> (<span class="tag">rect</span>, <span class="tag">Region</span><span class="class">.Op</span><span class="class">.REPLACE</span>);</span><br></pre></td></tr></table></figure>
+<p>drawArc主要用来画圆弧。而clipPath和clipRect主要用来进行裁剪。<br>注意其中的Region.Op参数[8]</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">/<span class="keyword">*</span><span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> 一直对clipRect的op参数有点迷惑，今天好好实验了一下，总结得到如下结果：</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> 为了方便说明，把第一次clipRect的绘制范围设为A，第二次clipRect设定的范围设为B</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.DIFFERENCE，实际上就是求得的A和B的差集范围，即A－B，只有在此范围内的绘制内容才会被显示；</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.REVERSE_DIFFERENCE，实际上就是求得的B和A的差集范围，即B－A，只有在此范围内的绘制内容才会被显示；；</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.INTERSECT，即A和B的交集范围，只有在此范围内的绘制内容才会被显示；</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.REPLACE，不论A和B的集合状况，B的范围将全部进行显示，如果和A有交集，则将覆盖A的交集范围；</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.UNION，即A和B的并集范围，即两者所包括的范围的绘制内容都会被显示；</span><br><span class="line"> <span class="keyword">*</span></span><br><span class="line"> <span class="keyword">*</span> Op.XOR，A和B的补集范围，此例中即A除去B以外的范围，只有在此范围内的绘制内容才会被显示；</span><br><span class="line"> <span class="keyword">*</span>/</span><br></pre></td></tr></table></figure>
+<p>参考文献</p>
+<p>[1]<a href="http://developer.android.com/intl/zh-cn/reference/android/view/Surface.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/reference/android/view/Surface.html</a><br>[2]<a href="https://source.android.com/devices/graphics/" target="_blank" rel="external">https://source.android.com/devices/graphics/</a><br>[3]<a href="http://developer.android.com/intl/zh-cn/guide/topics/graphics/opengl.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/guide/topics/graphics/opengl.html</a><br>[4]<a href="http://developer.android.com/intl/zh-cn/reference/android/view/SurfaceView.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/reference/android/view/SurfaceView.html</a><br>[5]<a href="http://developer.android.com/intl/zh-cn/about/versions/android-4.3.html#OpticalBounds" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/about/versions/android-4.3.html#OpticalBounds</a><br>[6]<a href="http://www.cnblogs.com/yydcdut/p/4170629.html" target="_blank" rel="external">http://www.cnblogs.com/yydcdut/p/4170629.html</a><br>[7]<a href="http://blog.csdn.net/guolin_blog/article/details/16330267" target="_blank" rel="external">http://blog.csdn.net/guolin_blog/article/details/16330267</a><br>[8]<a href="http://developer.android.com/intl/zh-cn/reference/android/graphics/Region.Op.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/reference/android/graphics/Region.Op.html</a><br>[9]<a href="http://blog.csdn.net/ldci3gandroid/article/details/1422840" target="_blank" rel="external">http://blog.csdn.net/ldci3gandroid/article/details/1422840</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/View/">View</a> <a class="tag tag--primary tag--small t-link" href="/tags/View生命周期/">View生命周期</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/09/Android View源码研究及相关知识总结二/"  data-tooltip="Android View 源码研究及相关知识总结（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/10/05/Translation-of-Speed up your app研读二/" data-tooltip="Speed up your app 研读（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/09/Android View源码研究及相关知识总结二/"  data-tooltip="Android View 源码研究及相关知识总结（二）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/10/05/Translation-of-Speed up your app研读二/" data-tooltip="Speed up your app 研读（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/11/05/Android View源码研究及相关知识总结一/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

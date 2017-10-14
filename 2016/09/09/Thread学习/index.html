@@ -1,0 +1,446 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>The scheduler and communication of thread - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="该篇文章用于记录Thread的一些总结，包含Thread的scheduler、通信、Android应用的线程等内容。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="The scheduler and communication of thread">
+<meta property="og:url" content="http://andyken.github.io/2016/09/09/Thread学习/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="该篇文章用于记录Thread的一些总结，包含Thread的scheduler、通信、Android应用的线程等内容。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/thread/thread-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/thread/thread-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/thread/thread-3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/thread/thread-4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/thread/thread-5.png">
+<meta property="og:updated_time" content="2016-09-13T01:05:24.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The scheduler and communication of thread">
+<meta name="twitter:description" content="该篇文章用于记录Thread的一些总结，包含Thread的scheduler、通信、Android应用的线程等内容。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            The scheduler and communication of thread
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Fri Sep 09 2016 00:00:00 GMT+0800">
+	
+		    9月 09, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/学习笔记/">学习笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>该篇文章用于记录Thread的一些总结，包含Thread的scheduler、通信、Android应用的线程等内容。</p>
+<a id="more"></a>
+<p>一、Thread的scheduler</p>
+<p>所谓线程的scheduler，就是线程之间竞争cpu资源的策略，在Java Thread中，有两个变量影响竞争策略，一个为线程的nice值，一个为线程的cgroup。</p>
+<p>首先nice值，即为线程的priority值，为什么叫nice值呢，可以理解为友善度，nice值越高，代表友善度越高，代表越谦让，越容易被其他线程所抢先执行。那么如何设置该值呢，在Java中通过调用Thread.setPriority()来设置。在Android中，其封装了另一套API，可以通过调用Process.setThreadPriority()来进行设置。需要注意这两个方法的区别：首先Java的setPriority()方法，其可以设置的最小优先级，为Thread.MIN_PRIORITY为1，而其可以设置的最大优先级为Thread.MAX_PRIORITY，为10，而默认优先级则为Thread.NORM_PRIORITY,值为5。最小、最大、默认分别对应Linux中的19、-8和0；其次，这两个方法不能混用，比如我们使用setThreadPriority()设置的值，通过Android的getPriority()并不能得到。</p>
+<p>在竞争cpu资源时，nice值越小，越有机会抢占cpu执行，那么是不是nice值高的线程，就不能永远得到cpu执行呢？这就引入了CFS策略，也就是completely fair scheduler。这种策略不但会参考单个线程的优先级，还会追踪每个线程已经获取到的cpu时间片数量（time slice），如果高优先级的线程已经执行了很长时间，但低优先级的线程一直在等待，后续系统会保证低优先级的线程也能获取更多的CPU时间。显然使用这种调度策略的话，优先级高的线程并不一定能在争取time slice上有绝对的优势，所以Android系统在线程调度上使用了cgroups的概念，cgroups能更好的凸显某些线程的重要性，使得优先级更高的线程明确的获取到更多的time slice。Android将线程分为多个group，其中两类group尤其重要。一类是default group，或者叫做foreground group，UI线程属于这一类。另一类是background group，工作线程归属到这一类。background group当中所有的线程加起来总共也只能分配到5～10%的time slice，剩下的全部分配给default group，这样设计显然能保证UI线程绘制UI的流畅性。</p>
+<p>那么你可能要问，哪些线程属于default group，哪些线程属于background group呢？按照[1]篇博客的说法，使用Process.setThreadPriority()设置，当nice值大于等于THREAD_PRIORITY_BACKGROUND，就会从属于background group，其余情况就会从属于foreground group。那么实际情况呢？我们下面来做一个实验。这里以5.1.0环境以及处于前台的进程com.test.app来为例子，我们输入</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb <span class="keyword">shell</span> <span class="keyword">ps</span> | <span class="keyword">grep</span> <span class="keyword">com</span>.test.app</span><br></pre></td></tr></table></figure>
+<p>得到如下内容<br><img src="/assets/images/thread/thread-1.png" alt="Thread-1"></p>
+<p>这里注意第一列，其代表USER。我们可以使用这个USER来继续查找，其中 -t为显示thread，-P为显示所属cgroup。</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb <span class="keyword">shell</span> <span class="keyword">ps</span> -<span class="keyword">t</span> -<span class="keyword">P</span> | <span class="keyword">grep</span> u0_a63</span><br></pre></td></tr></table></figure>
+<p>显示结果为<br><img src="/assets/images/thread/thread-2.png" alt="Thread-2"></p>
+<p><img src="/assets/images/thread/thread-3.png" alt="Thread-3"></p>
+<p>发现其所属cgroup都为fg。也就是foreground group。即使那些我们设置了nice值为THREAD_PRIORITY_BACKGROUND的线程。而当我们将应用切换到后台时，</p>
+<p><img src="/assets/images/thread/thread-4.png" alt="Thread-4"></p>
+<p>其所有的线程cgroup又为bg了。所以按照[1]的说法，并不正确。Android目前的cgroup其实是按照进程来分组的。</p>
+<p>当我们使用4.1.1的环境时,处于前台的nice值为THREAD_PRIORITY_BACKGROUND。cgroup又为bg了。</p>
+<p><img src="/assets/images/thread/thread-5.png" alt="Thread-5">。看来是和版本有关，这里还需要再研究。</p>
+<p>二、Android Thread<br>这里需要单独强调一下Android Thread中新建的thread的priority。目前Android的线程有UI Thread、Binder Thread、Background Thread。需要注意的是，默认的UI线程，我们使用Process.getThreadPriority()时得到的nice值为-6。那么我们从ui线程中new出的Thread，其nice值为多少呢？其实由于这些new出的线程，其父线程id都是ui thread（虽然第一行显示的为PID和PPID，但是由于我们使用了-t参数，所以当该行数据代表线程时，列出的都是thread id），其nice值都和父线程一样，这样就造成了，即使我们新开了一个后台线程去处理长时间的任务，还是会造成其和UI线程抢占cpu的问题。这就需要我们在new Thread的时候再去设置nice值。</p>
+<p>三、线程间通信<br>Java中线程间通信的方式，包含Pipes、Shared Memory（heap）、Signal、BlockingQueue。</p>
+<p>1.Pipes<br>其本身是一个在内存中的buffer，并且只有两头的线程才可以访问，这就保证了线程安全。pipe可以传递二进制或者character data。当我们传送二进制时，使用PipedOutputStream (in the producer) 以及 PipedInputStream (in the consumer)。当我们使用character data时，使用PipedWriter (in the producer) 和 PipedReader (in the consumer)</p>
+<p>这里以PipedWriter和PipedReader为例子总结了使用步骤，PipedOutputStream和PipedInputStream类似。<br>（1）Set up the connect</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PipedReader r = new PipedReader()<span class="comment">;</span></span><br><span class="line">PipedWriter w = new PipedWriter()<span class="comment">;</span></span><br><span class="line">w.connect(r)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>其中bufferSize默认为1024，单位为char，也就是1024个char。buffer = new char[pipeSize];<br>如果我们需要更改这个bufferSize，我们需要在consumer端来更改，比如new PipedReader(1024*4);</p>
+<p>（2）Pass the reader to a processing thread</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread <span class="literal">t</span> = new MyReaderThread<span class="list">(<span class="keyword">r</span>)</span><span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>（3）Transfer data</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">w.write(‘A');</span><br><span class="line"><span class="type">int</span> <span class="literal">result</span> = r.read();</span><br></pre></td></tr></table></figure>
+<p>注意，这里返回的是int型，returns the character as an integer value。<br>关于write，还有一个flush的方法，可以通知consumer thread，新数据到达。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">w.<span class="keyword">write</span>(<span class="string">'A'</span>);</span><br><span class="line">w.flush();</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> i;</span><br><span class="line"><span class="keyword">while</span>((i = reader.<span class="keyword">read</span>()) != -<span class="number">1</span>)&#123;</span><br><span class="line">    <span class="keyword">char</span> c = (<span class="keyword">char</span>) i ;</span><br><span class="line">    <span class="comment">//继续处理接收到的数据</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>（4）close the connection</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">w.<span class="function"><span class="title">close</span><span class="params">()</span></span></span><br><span class="line">r.<span class="function"><span class="title">close</span><span class="params">()</span></span></span><br></pre></td></tr></table></figure>
+<p>write关闭以后，pipe就将连接断掉了，但是在buffer中的数据还是可读的，当reader关闭了以后，buffer就被清空了。</p>
+<p>2.Shared Memory<br>共享内存（heap）是线程之间传递数据的常用方式。在函数中定义的基本类型变量和对象的引用变量都存放在栈中，而其余像整个类的静态变量（class member variable）和实例变量（instance member variable）以及函数中的对象都存放在heap中。栈内存归属于单个线程，每个线程都拥有一个栈内存，其存储的变量只能在其所属的线程中可见，而堆内存中的对象对所有线程可见，这就实现了线程间数据的传递。</p>
+<p>3.Signal<br>Signal的方式，就是使用notify和wait的方式，这里就不再赘述使用了，需要注意的点是notifyAll方法，它会唤醒所有的等待者，等待者执行时，不能保证之前没有其他其他等待者已经执行，所以需要在执行之前先判断是否符合条件，不符合执行条件，仍然需要wait。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">synchronized</span>(<span class="keyword">this</span>)&#123;</span><br><span class="line">    <span class="keyword">while</span>(条件不满足)&#123;</span><br><span class="line">        wait();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//条件满足时，再进行处理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4.BlockingQueue<br>BlockingQueue可以理解为对Signal的封装，用来处理消费者和生产者问题，其不需要我们使用wait和notify来通知是否可以继续生产产品或者消费产品。如果BlockingQueue已经满了，生产者就无法自动生产产品（put方法就被阻塞），如果BlockingQueue为空，消费者就自动无法消费产品（take方法就被阻塞）</p>
+<p>如果在Android中使用上面说的这四种方式，那么会造成ui线程的等待和阻塞。为此，Android自定义了一套线程间通信的系统，也就是Handler、Looper、MessageQueue。这里的内容可以参考我的<a href="http://andyken.github.io/2016/02/21/Handler-Message-Looper/">这篇博客</a>。</p>
+<p>参考文献<br>[1]<a href="http://www.androiddesignpatterns.com/2014/01/thread-scheduling-in-android.html" target="_blank" rel="external">http://www.androiddesignpatterns.com/2014/01/thread-scheduling-in-android.html</a><br>[2]<a href="https://book.douban.com/subject/25900200/" target="_blank" rel="external">https://book.douban.com/subject/25900200/</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Thread/">Thread</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/01/17/Android CGroup调研/"  data-tooltip="Android CGroup实际情况调研">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/25/WebKit学习/" data-tooltip="WebKit学习笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/01/17/Android CGroup调研/"  data-tooltip="Android CGroup实际情况调研">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/25/WebKit学习/" data-tooltip="WebKit学习笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/09/09/Thread学习/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

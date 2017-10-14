@@ -1,0 +1,432 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Ormlite性能优化总结 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="该篇博客会对ormlite的性能优化做一些总结，包括使用ormlite的config文件、WAL、以及一些性能优化总结点。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Ormlite性能优化总结">
+<meta property="og:url" content="http://andyken.github.io/2016/02/18/Ormlite性能优化总结/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="该篇博客会对ormlite的性能优化做一些总结，包括使用ormlite的config文件、WAL、以及一些性能优化总结点。">
+<meta property="og:updated_time" content="2017-02-14T02:35:41.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ormlite性能优化总结">
+<meta name="twitter:description" content="该篇博客会对ormlite的性能优化做一些总结，包括使用ormlite的config文件、WAL、以及一些性能优化总结点。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Ormlite性能优化总结
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Feb 18 2016 00:00:00 GMT+0800">
+	
+		    2月 18, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/Android性能/">Android性能</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>该篇博客会对ormlite的性能优化做一些总结，包括使用ormlite的config文件、WAL、以及一些性能优化总结点。</p>
+<a id="more"></a>
+<p>一、使用ormlite的config文件</p>
+<p>使用ormlite_config文件来创建数据库和dao，可以减少初始化数据库的开销。<br>1.原理<br>ormlite的数据库创建会调用TableUtils.createTableIfNotExists(connectionSource, LaunchAdEO.class);方法，其中又会调用到</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> &lt;T, ID&gt; int createTable(ConnectionSource connectionSource, <span class="class"><span class="keyword">Class</span>&lt;<span class="title">T</span>&gt; <span class="title">dataClass</span>, <span class="title">boolean</span> <span class="title">ifNotExists</span>)</span><br><span class="line">            <span class="title">throws</span> <span class="title">SQLException</span> </span>&#123;</span><br><span class="line">        Dao&lt;T, ID&gt; dao = DaoManager.createDao(connectionSource, dataClass);</span><br><span class="line">        <span class="keyword">if</span> (dao <span class="keyword">instanceof</span> BaseDaoImpl<span class="preprocessor">&lt;?</span>, <span class="preprocessor">?&gt;</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> doCreateTable(connectionSource, ((BaseDaoImpl<span class="preprocessor">&lt;?</span>, <span class="preprocessor">?&gt;</span>) dao).getTableInfo(), ifNotExists);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            TableInfo&lt;T, ID&gt; tableInfo = <span class="keyword">new</span> TableInfo&lt;T, ID&gt;(connectionSource, <span class="keyword">null</span>, dataClass);</span><br><span class="line">            <span class="keyword">return</span> doCreateTable(connectionSource, tableInfo, ifNotExists);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>在其中的DaoManager.createDao(connectionSource, dataClass)方法中会进行dao创建，其中的逻辑是先会调用到DaoManager的createDaoFromConfig方法，如果返回值不为null，那么就会直接返回，否则会通过耗时的反射来创建dao。<br><figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Creates the DAO if we have config information cached and caches the DAO.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> &lt;D, T&gt; <span class="function">D <span class="title">createDaoFromConfig</span><span class="params">(ConnectionSource connectionSource, Class&lt;T&gt; clazz)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    <span class="comment">// no loaded configs</span></span><br><span class="line">    <span class="keyword">if</span> (configMap == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    DatabaseTableConfig&lt;T&gt; config = (DatabaseTableConfig&lt;T&gt;) configMap.get(clazz);</span><br><span class="line">    <span class="comment">// if we don't config information cached return null</span></span><br><span class="line">    <span class="keyword">if</span> (config == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// else create a DAO using configuration</span></span><br><span class="line">    Dao&lt;T, ?&gt; configedDao = doCreateDao(connectionSource, config);</span><br><span class="line">    <span class="annotation">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    D castDao = (D) configedDao;</span><br><span class="line">    <span class="keyword">return</span> castDao;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>那么这里的configMap又是在哪里被填充进去的呢？<br>搜索代码发现是在DaoManager的addCachedDatabaseConfig中完成的，而该方法是在OrmLiteSqliteOpenHelper的构造函数。</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public OrmLiteSqliteOpenHelper(Context context, <span class="built_in">String</span> databaseName, SQLiteDatabase.CursorFactory <span class="literal">factory</span>, <span class="built_in">int</span> databaseVersion,</span><br><span class="line">        File configFile) &#123;</span><br><span class="line">    <span class="keyword">this</span>(context, databaseName, <span class="literal">factory</span>, databaseVersion, openFile(configFile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>或者</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public OrmLiteSqliteOpenHelper(Context context, <span class="built_in">String</span> databaseName, SQLiteDatabase.CursorFactory <span class="literal">factory</span>, <span class="built_in">int</span> databaseVersion,</span><br><span class="line">        <span class="built_in">int</span> configFileId) &#123;</span><br><span class="line">    <span class="keyword">this</span>(context, databaseName, <span class="literal">factory</span>, databaseVersion, openFileId(context, configFileId));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>中完成的调用，该构造函数会调用到下面的代码，也就是在构造函数中完成配置文件的读取，并最终生成DatabaseTableConfig的对象</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BufferedReader</span> reader = <span class="keyword">new</span> <span class="keyword">BufferedReader</span>(<span class="keyword">new</span> InputStreamReader(stream), <span class="number">4096</span>);</span><br><span class="line">DaoManager.addCachedDatabaseConfigs(DatabaseTableConfigLoader.loadDatabaseConfigFromReader(reader));</span><br></pre></td></tr></table></figure>
+<p>总结：ormlite，在调用openHelper时，如果不传入配置文件，会默认使用耗时的反射来定义数据库的名称和字段</p>
+<p>2.如何生成配置文件<br>在官方文档[1]的提示下，在类OrmliteConfigUtil的方法writeConfigForFile</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">DatabaseConfigUtil</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">OrmLiteConfigUtil</span> &#123;</span></span><br><span class="line">  public static void main(<span class="type">String</span>[] args) <span class="keyword">throws</span> <span class="type">Exception</span> &#123;</span><br><span class="line">    writeConfigFile(<span class="string">"ormlite_config.txt"</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>中会调用到OrmliteConfigUtil的writeConfigForTable方法。<br>该方法会扫描所有的.java文件，效率比较差，我们可以给出需要写入config文件中的java类名。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">DatabaseConfigUtil</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">OrmLiteConfigUtil</span> &#123;</span></span><br><span class="line">  <span class="keyword">private</span> static <span class="keyword">final</span> <span class="type">Class</span>&lt;?&gt;[] classes = <span class="keyword">new</span> <span class="type">Class</span>[] &#123;</span><br><span class="line">    <span class="type">SimpleData</span>.<span class="keyword">class</span>,</span><br><span class="line">  &#125;;</span><br><span class="line">  public static void main(<span class="type">String</span>[] args) <span class="keyword">throws</span> <span class="type">Exception</span> &#123;</span><br><span class="line">    writeConfigFile(<span class="string">"ormlite_config.txt"</span>, classes);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当我们运行完上述工具类，我们就会在raw resource folder下面得到config文件，同时，也会生成R.java文件，这样我们就可以在用</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public OrmLiteSqliteOpenHelper(Context context, <span class="built_in">String</span> databaseName, SQLiteDatabase.CursorFactory <span class="literal">factory</span>, <span class="built_in">int</span> databaseVersion,</span><br><span class="line">        <span class="built_in">int</span> configFileId) &#123;</span><br><span class="line">    <span class="keyword">this</span>(context, databaseName, <span class="literal">factory</span>, databaseVersion, openFileId(context, configFileId));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>构造函数中传入R.raw.ormlite_config这个configFileld参数。</p>
+<p>按照[2]进行操作，<br>但注意出现了类似错误Exception in thread “main” java.lang.ClassNotFoundException: my.package.DatabaseConfigUtil</p>
+<p>如何解决？<br>首先我们得在app/src/main/res/raw/ 创建文件,因为我们在DBHHelper的构造函数中已经引入了R.raw.ormlite_config了<br>然后Edit Configuration中的before launch中去掉make<br>在Working directory中进行$MODULE_DIR$/src/main的配置<br>同时我们需要compile project(‘:ormlite’) 也就是编译包含DatabaseConfigUtil的项目，这点非常重要<br>在writeConfigFile(“ormlite_config.txt”, classes);时直接写出ormlite文件即可。<br>如果还是出现Exception in thread “main” java.lang.ClassNotFoundException错误，可以考虑将配置删除以后，再运行并更改配置。</p>
+<p>二、一些tips<br>1.将数据库的任何操作放在启动页之后来进行，防止在启动页中由于调用到了getWritableDatabase()方法来进行耗时的数据库初始化以及更新操作。<br>2.ormlite使用批处理，包括dao.callbatchtasks，或者直接使用TransactionManager.callInTransaction。其中dao.callbatchtasks在内部也是调用callInTransaction的。<br>3.<br>SQLite日志[6][8]<br>开启</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteLog V</span><br><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteStatements V</span><br><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteTime V</span><br><span class="line">adb <span class="keyword">shell</span> <span class="keyword">stop</span></span><br><span class="line">adb <span class="keyword">shell</span> start</span><br></pre></td></tr></table></figure>
+<p>上述语句也可单独使用 其中第三条更有用一些 代表打印时间<br>并且需要杀掉进程重启</p>
+<p>关闭 注意这里为中文的双引号</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteLog “”</span><br><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteStatements “”</span><br><span class="line">adb <span class="keyword">shell</span> setprop <span class="built_in">log</span>.<span class="keyword">tag</span>.SQLiteTime “”</span><br><span class="line">adb <span class="keyword">shell</span> <span class="keyword">stop</span></span><br><span class="line">adb <span class="keyword">shell</span> start</span><br></pre></td></tr></table></figure>
+<p>4.复杂的实体数据，可以考虑使用executeRaw来执行原生sql<br>getDao().executeRaw()<br>5.增加数据库cache，在插入或者更新数据后，将数据保存在内存中，下次只要从内存中取即可。<br>6.直接使用cursor减少不必要的映射。</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public <span class="type">Cursor</span> getCursorOfAll() &#123;</span><br><span class="line">    <span class="type">QueryBuilder</span>&lt;<span class="type">EntityType</span>, <span class="type">Long</span>&gt; qb = getDao().queryBuilder();</span><br><span class="line">    <span class="type">Where</span>&lt;<span class="type">EntityType</span>, <span class="type">Long</span>&gt; where = qb.where();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        where.eq(<span class="string">"deleteTime"</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="type">CloseableIterator</span>&lt;<span class="type">EntityType</span>&gt; <span class="keyword">iterator</span> = getDao().<span class="keyword">iterator</span>(where.prepare());</span><br><span class="line">        <span class="type">AndroidDatabaseResults</span> results = (<span class="type">AndroidDatabaseResults</span>) <span class="keyword">iterator</span>.getRawResults();</span><br><span class="line">        <span class="keyword">return</span> results.getRawCursor();</span><br><span class="line">    &#125; catch (<span class="type">Exception</span> e) &#123;</span><br><span class="line">        <span class="keyword">return</span> null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>参考文献<br>[1]<a href="http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_4.html#Config-Optimization" target="_blank" rel="external">http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_4.html#Config-Optimization</a><br>[2]<a href="http://stackoverflow.com/questions/17298773/android-studio-run-configuration-for-ormlite-config-generation" target="_blank" rel="external">http://stackoverflow.com/questions/17298773/android-studio-run-configuration-for-ormlite-config-generation</a><br>[3]<a href="https://www.sqlite.org/wal.html" target="_blank" rel="external">https://www.sqlite.org/wal.html</a><br>[4]<a href="http://stackoverflow.com/questions/34059173/exception-write-ahead-logging-wal-mode-cannot-be-enabled-or-disabled-while-th" target="_blank" rel="external">http://stackoverflow.com/questions/34059173/exception-write-ahead-logging-wal-mode-cannot-be-enabled-or-disabled-while-th</a><br>[5]<a href="http://stackoverflow.com/questions/12909489/ormlite-performance-on-4-0-3-ics" target="_blank" rel="external">http://stackoverflow.com/questions/12909489/ormlite-performance-on-4-0-3-ics</a><br>[6]<a href="http://blog.chengyunfeng.com/?p=583" target="_blank" rel="external">http://blog.chengyunfeng.com/?p=583</a><br>[7]<a href="https://www.sqlite.org/wal.html" target="_blank" rel="external">https://www.sqlite.org/wal.html</a><br>[8]<a href="http://stackoverflow.com/questions/29022059/log-query-time-in-sqlite-on-android" target="_blank" rel="external">http://stackoverflow.com/questions/29022059/log-query-time-in-sqlite-on-android</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Ormlite/">Ormlite</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/21/Handler-Message-Looper/"  data-tooltip="Handler-Message-Looper研究">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/01/21/Ormlite相关总结/" data-tooltip="Ormlite相关总结（一）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/21/Handler-Message-Looper/"  data-tooltip="Handler-Message-Looper研究">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/01/21/Ormlite相关总结/" data-tooltip="Ormlite相关总结（一）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/18/Ormlite性能优化总结/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

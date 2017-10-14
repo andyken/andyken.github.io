@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Ormlite相关总结（二） - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="在该篇博客中会分析ormlite的一些主要文件和一次update操作，来对ormlite的源码进行研究。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Ormlite相关总结（二）">
+<meta property="og:url" content="http://andyken.github.io/2016/02/25/Ormlite相关总结2/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="在该篇博客中会分析ormlite的一些主要文件和一次update操作，来对ormlite的源码进行研究。">
+<meta property="og:updated_time" content="2016-02-26T11:58:41.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ormlite相关总结（二）">
+<meta name="twitter:description" content="在该篇博客中会分析ormlite的一些主要文件和一次update操作，来对ormlite的源码进行研究。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Ormlite相关总结（二）
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Feb 25 2016 00:00:00 GMT+0800">
+	
+		    2月 25, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>在该篇博客中会分析ormlite的一些主要文件和一次update操作，来对ormlite的源码进行研究。</p>
+<a id="more"></a>
+<p>一、ormlite主要类浅析</p>
+<p>首先对于android端，ormlite由core和android两个部分组成。<br>首先，我们来看ormlite-core，其中包含core、dao、db、field、logger、misc、stmt、support、table文件夹。其中主要文件夹包含dao、stmt、table、support、field。<br>1.首先是dao文件夹，包含主要类BaseDaoImpl、Dao、DaoManager、RuntimeExceptionDao，其中BaseDaoImpl是Dao的抽象实现，Dao为接口，RuntimeExceptionDao为Dao的封装，对抛出的错误做了封装。<br>2.stmt文件夹<br>（1）该文件夹下包含子文件夹mapped，该文件夹主要进行映射相关的功能，也就是说，将java的变量解析成sql可以理解的变量，例如下面的代码<br>convertJavaFieldToSqlArgValue(extractJavaFieldValue(object));<br>（2）接口PreparedStmt，又有三个接口继承该接口，分别为PreparedDelete、PreparedQuery、PreparedUpdate。然后我们看MappedPreparedStmt，该类主要完成预编译，使用预编译对象可以提高效率，提高安全性，提高效率是因为将格式固定的SQL编译后放在内存中，提高安全性是因为防止sql注入[1]<br>（3）StatementBuilder，顾名思义为构建sql语句的类，这个builder表明他们用了构造者模式，类似PreparedStmt，同样包含三个子类，QueryBuilder、UpdateBuilder、DeleteBuiler，分别对查找、更新和删除进行构建。<br>比如一次query</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">QueryBuilder&lt;TestEO, Long&gt; queryBuilder = DBManager.getTestRuntimeDao().queryBuilder();</span><br><span class="line">    Where&lt;TestEO, Long&gt; where = queryBuilder.where();</span><br><span class="line">    try &#123;</span><br><span class="line">        where.e<span class="string">q("deleteTime", 0)</span>.<span class="keyword">and</span>().e<span class="string">q("chargeVisible", 1)</span>.<span class="keyword">and</span>().e<span class="string">q("parentId", 0)</span>;</span><br><span class="line">        queryBuilder.orderBy(<span class="string">"orderNum"</span>, true);</span><br><span class="line">        <span class="keyword">return</span> DBManager.getTestRuntimeDao().query(where.prepare());</span><br><span class="line">    &#125; catch (SQLException e) &#123;</span><br><span class="line">        <span class="keyword">return</span> null;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>或者一次update</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">ub</span><span class="class">.where</span>()<span class="class">.le</span>(“<span class="tag">modifyTime</span>", <span class="tag">lastReadDbTime</span>)<span class="class">.and</span>()<span class="class">.le</span>(“<span class="tag">createTime</span>", <span class="tag">lastReadDbTime</span>);</span><br><span class="line"><span class="tag">ub</span><span class="class">.updateColumnValue</span>(“<span class="tag">test</span>", <span class="tag">trueCode</span>);</span><br><span class="line"><span class="tag">ub</span><span class="class">.update</span>();</span><br></pre></td></tr></table></figure>
+<p>（4）StatementExecutor<br>类似StatementBuilder为sql语句的构建，那么StatementExecutor主要完成sql语句的执行</p>
+<p>二、一次update操作</p>
+<p>getDao().update(data);<br>也就是RuntimeExceptionDao.update</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * <span class="doctag">@see</span> Dao#update(Object)</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">int</span> <span class="title">update</span><span class="params">(T data)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="function"><span class="keyword">return</span> dao.<span class="title">update</span><span class="params">(data)</span></span>;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">        logMessage(e, <span class="string">"update threw exception on: "</span> + data);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用到的是BaseDaoImpl的update方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">int</span> <span class="title">update</span><span class="params">(T data)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    checkForInitialized();</span><br><span class="line">    <span class="comment">// ignore updating a null object</span></span><br><span class="line">    <span class="keyword">if</span> (data == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        DatabaseConnection connection = connectionSource.getReadWriteConnection();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="function"><span class="keyword">return</span> statementExecutor.<span class="title">update</span><span class="params">(connection, data, objectCache)</span></span>;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            connectionSource.releaseConnection(connection);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中的update也是调用的StatementExecutor的update方法。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line">     * Update an object in the database.</span><br><span class="line">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">int</span> <span class="title">update</span><span class="params">(DatabaseConnection databaseConnection, T data, ObjectCache objectCache)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mappedUpdate == <span class="keyword">null</span>) &#123;</span><br><span class="line">            mappedUpdate = MappedUpdate.build(databaseType, tableInfo);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">return</span> mappedUpdate.<span class="title">update</span><span class="params">(databaseConnection, data, objectCache)</span></span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<font color="red">经过一系列的操作，这里调用到了MappedUpdate的update方法。</font>
+
+
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Update the object in the database.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="built_in">int</span> update(DatabaseConnection databaseConnection, T data, ObjectCache objectCache) <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// there is always and id field as an argument so just return 0 lines updated</span></span><br><span class="line">        <span class="keyword">if</span> (argFieldTypes.length &lt;= <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">Object</span>[] args = getFieldObjects(data);</span><br><span class="line">        <span class="keyword">Object</span> newVersion = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (versionFieldType != <span class="keyword">null</span>) &#123;</span><br><span class="line">            newVersion = versionFieldType.extractJavaFieldValue(data);</span><br><span class="line">            newVersion = versionFieldType.moveToNextValue(newVersion);</span><br><span class="line">            args[versionFieldTypeIndex] = versionFieldType.convertJavaFieldToSqlArgValue(newVersion);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">int</span> rowC = databaseConnection.update(statement, args, argFieldTypes);</span><br><span class="line">        <span class="keyword">if</span> (rowC &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (newVersion != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// if we have updated a row then update the version field in our object to the new value</span></span><br><span class="line">                versionFieldType.assignField(data, newVersion, <span class="keyword">false</span>, <span class="keyword">null</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (objectCache != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// if we've changed something then see if we need to update our cache</span></span><br><span class="line">                <span class="keyword">Object</span> id = idField.extractJavaFieldValue(data);</span><br><span class="line">                T cachedData = objectCache.<span class="built_in">get</span>(clazz, id);</span><br><span class="line">                <span class="keyword">if</span> (cachedData != <span class="keyword">null</span> &amp;&amp; cachedData != data) &#123;</span><br><span class="line">                    <span class="comment">// copy each field from the updated data into the cached object</span></span><br><span class="line">                    <span class="keyword">for</span> (FieldType fieldType : tableInfo.getFieldTypes()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (fieldType != idField) &#123;</span><br><span class="line">                            fieldType.assignField(cachedData, fieldType.extractJavaFieldValue(data), <span class="keyword">false</span>,</span><br><span class="line">                                    objectCache);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        logger.debug(<span class="string">"update data with statement '&#123;&#125;' and &#123;&#125; args, changed &#123;&#125; rows"</span>, statement, args.length, rowC);</span><br><span class="line">        <span class="keyword">if</span> (args.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// need to do the (Object) cast to force args to be a single object</span></span><br><span class="line">            logger.trace(<span class="string">"update arguments: &#123;&#125;"</span>, (<span class="keyword">Object</span>) args);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> rowC;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> SqlExceptionUtil.create(<span class="string">"Unable to run update stmt on object "</span> + data + <span class="string">": "</span> + statement, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先看其中的getFieldObjects方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Return the array of field objects pulled from the data object.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">Object</span>[] getFieldObjects(<span class="keyword">Object</span> data) <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="keyword">Object</span>[] objects = <span class="keyword">new</span> <span class="keyword">Object</span>[argFieldTypes.length];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; argFieldTypes.length; i++) &#123;</span><br><span class="line">        FieldType fieldType = argFieldTypes[i];</span><br><span class="line">        <span class="keyword">if</span> (fieldType.isAllowGeneratedIdInsert()) &#123;</span><br><span class="line">            objects[i] = fieldType.getFieldValueIfNotDefault(data);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            objects[i] = fieldType.extractJavaFieldToSqlArgValue(data);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (objects[i] == <span class="keyword">null</span> &amp;&amp; fieldType.getDefaultValue() != <span class="keyword">null</span>) &#123;</span><br><span class="line">            objects[i] = fieldType.getDefaultValue();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> objects;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意这里的argFieldTypes，在update中有build方法</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="comment">(mappedUpdate == null)</span> &#123;</span><br><span class="line">    mappedUpdate = MappedUpdate.build<span class="comment">(databaseType, tableInfo)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在该build中完成的argFieldTypes的构造，同时会调用到MappedUpdate的构造函数，在父类的构造函数BaseMappedStatement完成argFieldTypes赋值。<br>该初始化函数也可以在query或者update时调用queryBuilder或者UpdateBuiler的prepare完成的，其中prepare会调用到statementBuilder的prepareStatement</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="type">MappedPreparedStmt</span>&lt;<span class="type">T</span>, <span class="type">ID</span>&gt; prepareStatement(<span class="type">Long</span> limit) <span class="keyword">throws</span> <span class="type">SQLException</span> &#123;</span><br><span class="line">    <span class="type">List</span>&lt;<span class="type">ArgumentHolder</span>&gt; argList = <span class="keyword">new</span> <span class="type">ArrayList</span>&lt;<span class="type">ArgumentHolder</span>&gt;();</span><br><span class="line">    <span class="type">String</span> statement = buildStatementString(argList);</span><br><span class="line">    <span class="type">ArgumentHolder</span>[] selectArgs = argList.toArray(<span class="keyword">new</span> <span class="type">ArgumentHolder</span>[argList.size()]);</span><br><span class="line">    <span class="type">FieldType</span>[] resultFieldTypes = getResultFieldTypes();</span><br><span class="line">    <span class="type">FieldType</span>[] argFieldTypes = <span class="keyword">new</span> <span class="type">FieldType</span>[argList.size()];;</span><br><span class="line">    <span class="keyword">for</span> (int selectC = <span class="number">0</span>; selectC &lt; selectArgs.length; selectC++) &#123;</span><br><span class="line">        argFieldTypes[selectC] = selectArgs[selectC].getFieldType();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="class"><span class="keyword">type</span>.<span class="title">isOkForStatementBuilder</span>(</span>)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">"Building a statement from a "</span> + <span class="class"><span class="keyword">type</span> <span class="title">+</span> " <span class="title">statement</span> <span class="title">is</span> <span class="title">not</span> <span class="title">allowed</span>");</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">MappedPreparedStmt</span>&lt;<span class="type">T</span>, <span class="type">ID</span>&gt;(tableInfo, statement, argFieldTypes, resultFieldTypes, selectArgs,</span><br><span class="line">            (databaseType.isLimitSqlSupported() ? <span class="literal">null</span> : limit), <span class="class"><span class="keyword">type</span>);</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中就完成了MappedPreparedStmt的构造，而MappedPreparedStmt是BaseMappedStatement的子类。<br>注意BaseMappedStatement中的getFieldObjects中的这一段代码</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">objects</span>[i] = fieldType.extractJavaFieldToSqlArgValue(<span class="typedef"><span class="keyword">data</span>);</span></span><br></pre></td></tr></table></figure>
+<p>其中调用了FieldType的convertJavaFieldToSqlArgValue(extractJavaFieldValue(object));方法</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object extractJavaFieldValue(Object <span class="keyword">object</span>) throws SQLException &#123;</span><br><span class="line"></span><br><span class="line">    Object <span class="variable"><span class="keyword">val</span></span> = extractRawJavaFieldValue(<span class="keyword">object</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// if this is a foreign object then we want its id field</span></span><br><span class="line">    <span class="keyword">if</span> (foreignIdField != <span class="literal">null</span> &amp;&amp; <span class="variable"><span class="keyword">val</span> !</span>= <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="variable"><span class="keyword">val</span></span> = foreignIdField.extractRawJavaFieldValue(<span class="variable"><span class="keyword">val</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return <span class="keyword">val</span>;</span><br><span class="line">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>最终调用到了FieldType的</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Return the value from the field in the object that is defined by this FieldType.</span><br><span class="line"> */</span></span><br><span class="line">public &lt;<span class="type">FV</span>&gt; <span class="type">FV</span> extractRawJavaFieldValue(<span class="type">Object</span> <span class="class"><span class="keyword">object</span>) <span class="title">throws</span> <span class="title">SQLException</span> &#123;</span></span><br><span class="line">    <span class="type">Object</span> <span class="keyword">val</span>;</span><br><span class="line">    <span class="keyword">if</span> (fieldGetMethod == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// field object may not be a T yet</span></span><br><span class="line">            <span class="keyword">val</span> = field.get(<span class="class"><span class="keyword">object</span>);</span></span><br><span class="line">        &#125; <span class="keyword">catch</span> (<span class="type">Exception</span> e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="type">SqlExceptionUtil</span>.create(<span class="string">"Could not get field value for "</span> + <span class="keyword">this</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">val</span> = fieldGetMethod.invoke(<span class="class"><span class="keyword">object</span>);</span></span><br><span class="line">        &#125; <span class="keyword">catch</span> (<span class="type">Exception</span> e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="type">SqlExceptionUtil</span>.create(<span class="string">"Could not call "</span> + fieldGetMethod + <span class="string">" for "</span> + <span class="keyword">this</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="annotation">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    <span class="type">FV</span> converted = (<span class="type">FV</span>) <span class="keyword">val</span>;</span><br><span class="line">    <span class="keyword">return</span> converted;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中的object为data数据对象，</p>
+<p>随后会调用FieldType的convertJavaFieldToSqlArgValue方法</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Convert a field value to something suitable to be stored in the database.</span><br><span class="line"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">Object</span> convertJavaFieldToSqlArgValue(<span class="keyword">Object</span> fieldVal) <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="keyword">if</span> (fieldVal == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> fieldConverter.javaToSqlArg(<span class="keyword">this</span>, fieldVal);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>随后来看代码</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> rowC = databaseConnection.<span class="keyword">update</span>(statement, <span class="keyword">args</span>, argFieldTypes);</span><br></pre></td></tr></table></figure>
+<p>其中会调用到我设置的ConnectionProxy的update方法</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="annotation">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">int</span> <span class="title">update</span><span class="params">(String statement, Object[] args, FieldType[] argfieldTypes)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> ret = <span class="keyword">super</span>.update(statement, args, argfieldTypes);</span><br><span class="line">    Matcher matcher = updatePattern.matcher(statement);</span><br><span class="line">    <span class="keyword">if</span> (!getDbHelper().getWritableDatabase().inTransaction() &amp;&amp; matcher.find()) &#123;</span><br><span class="line">        postChangeEvent(matcher.group(<span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>随后进行 调用AndroidDatabaseConnection的update方法</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">private <span class="type">int</span> update(<span class="type">String</span> statement, <span class="type">Object</span>[] args, <span class="type">FieldType</span>[] argFieldTypes, <span class="type">String</span> label) throws <span class="type">SQLException</span> &#123;</span><br><span class="line">    <span class="type">SQLiteStatement</span> <span class="type">stmt</span> = null;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="type">stmt</span> = db.compileStatement(statement);</span><br><span class="line">        bindArgs(<span class="type">stmt</span>, args, argFieldTypes);</span><br><span class="line">        <span class="type">stmt</span>.execute();</span><br><span class="line">    &#125; catch (android.database.<span class="type">SQLException</span> e) &#123;</span><br><span class="line">        throw <span class="type">SqlExceptionUtil</span>.create(<span class="string">"updating database failed: "</span> + statement, e);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">stmt</span> != null) &#123;</span><br><span class="line">            <span class="type">stmt</span>.close();</span><br><span class="line">            <span class="type">stmt</span> = null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">int</span> <span class="literal">result</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="type">stmt</span> = db.compileStatement(<span class="string">"SELECT CHANGES()"</span>);</span><br><span class="line">        <span class="literal">result</span> = (<span class="type">int</span>) <span class="type">stmt</span>.simpleQueryForLong();</span><br><span class="line">    &#125; catch (android.database.<span class="type">SQLException</span> e) &#123;</span><br><span class="line">        // ignore the exception <span class="keyword">and</span> just <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">        <span class="literal">result</span> = <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">stmt</span> != null) &#123;</span><br><span class="line">            <span class="type">stmt</span>.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    logger.trace(<span class="string">"&#123;&#125; statement is compiled and executed, changed &#123;&#125;: &#123;&#125;"</span>, label, <span class="literal">result</span>, statement);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">result</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中调用了stmt.execute();也就是sqlcipher中SQLiteStatement的execute方法。</p>
+<p>参考文献<br>[1]<a href="http://blog.csdn.net/theorytree/article/details/7331096" target="_blank" rel="external">http://blog.csdn.net/theorytree/article/details/7331096</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Ormlite/">Ormlite</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/03/07/Realm调研笔记/"  data-tooltip="Realm调研笔记">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/21/Handler-Message-Looper/" data-tooltip="Handler-Message-Looper研究">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/03/07/Realm调研笔记/"  data-tooltip="Realm调研笔记">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/21/Handler-Message-Looper/" data-tooltip="Handler-Message-Looper研究">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/02/25/Ormlite相关总结2/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

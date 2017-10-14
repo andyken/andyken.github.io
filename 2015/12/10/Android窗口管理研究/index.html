@@ -1,0 +1,427 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Android窗口管理研究 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本篇博客对Android的窗口管理进行研究。其中会涉及到windowManagerService、windowManager、SurfaceFlinger等内容.">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Android窗口管理研究">
+<meta property="og:url" content="http://andyken.github.io/2015/12/10/Android窗口管理研究/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客对Android的窗口管理进行研究。其中会涉及到windowManagerService、windowManager、SurfaceFlinger等内容.">
+<meta property="og:updated_time" content="2015-12-14T03:37:46.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android窗口管理研究">
+<meta name="twitter:description" content="本篇博客对Android的窗口管理进行研究。其中会涉及到windowManagerService、windowManager、SurfaceFlinger等内容.">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Android窗口管理研究
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Dec 10 2015 00:00:00 GMT+0800">
+	
+		    12月 10, 2015
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客对Android的窗口管理进行研究。其中会涉及到windowManagerService、windowManager、SurfaceFlinger等内容.</p>
+<a id="more"></a>
+<p>一、WindowManager简单介绍</p>
+<p>首先这个WindowManager为Android的窗口管理器。在android中，存在一个WindowManager接口，该接口为windowManager提供的对外接口，我们可以通过Context.getSystemService(Context.WINDOW_SERVICE);来获得该对象。按照文档的说法，一种最为简便的在另外一个页面上展示window的方法是创建一个Presentation，Presentation会自动为了展示获得WindowManager和Context。</p>
+<p>windowManager有两个方法，getDefaultDisplay和removeViewImmediate方法。我们主要来看常用的这个getDefaultDisplay方法。首先需要知道有两种display，一个是application display，一个是real display。real display包括状态栏。这两种的display在point和displayMetrics上自然不同。我们调用getSize、getRectSize、getMetrics来获得application的display，通过调用getRealSize、getRealMetrics来获得实际的的size和displayMetrics。</p>
+<p>获得屏幕尺寸的方法包括三种：</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//该方法已经在API level 13以后废弃。</span></span><br><span class="line">WindowManager windowManager = getWindowManager();</span><br><span class="line"><span class="keyword">Display</span> <span class="keyword">display</span> = windowManager.getDefaultDisplay();</span><br><span class="line">int screenWidth = <span class="keyword">display</span>.getWidth();</span><br><span class="line">int screenHeight = <span class="keyword">display</span>.getHeight();</span><br></pre></td></tr></table></figure>
+<p>上述方法已经废弃了，废弃以后使用下面的方法：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Point outSize = new Point()<span class="comment">;</span></span><br><span class="line">display.getSize(outSize)<span class="comment">;</span></span><br><span class="line">screenWidth = outSize.x<span class="comment">;</span></span><br><span class="line">screenHeight = outSize.y<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>但该方法本质上还是调用metrics，所以我们直接使用第三种方法即可</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DisplayMetrics dm = new DisplayMetrics()<span class="comment">;</span></span><br><span class="line">getWindowManager().getDefaultDisplay().getMetrics(dm)<span class="comment">;</span></span><br><span class="line">screenWidth =dm.widthPixels<span class="comment">;</span></span><br><span class="line">screenHeight =dm.heightPixels<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>二、WindowManager和Activity的关联</p>
+<p>一个activity是如何和windowManager进行关联呢？<br>首先，让我们看Android的主线程activityThread，由于Android的启动和有关操作是通过消息机制来进行的，在ActivityThread类中的Handler对LAUNCH_ACTIVITY消息的处理就可以看做系统的启动activity的有关逻辑。该逻辑中关键的一行代码是handleLaunchActivity。在其中会调用performLaunchActivity方法。在该方法中主要完成了window和activity的关联。<br>我们主要来看这个方法，在这个方法中，会新建一个activity，并且会通过attach方法传入很多参数，其中就包括了代表activity标识的token，</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">activity = mInstrumentation.newActivity(<span class="keyword">cl</span>, component.getClassName(), r.intent);</span><br><span class="line">...</span><br><span class="line">activity.attach(appContext, this, getInstrumentation(), r.<span class="keyword">token</span>,r.ident, <span class="keyword">app</span>, r.intent, r.activityInfo, title, r.parent,r.embeddedID, r.lastNonConfigurationInstances, config);</span><br></pre></td></tr></table></figure>
+<p>在该attach方法中，会调用window的setWindowManager方法，将token设置给window，在window中会将token传给WindowManager.LayoutParams类型的wp对象。而当我们在调用ViewRootImpl对象的setView方法时会调用<br>mWindowAttributes.copyFrom(attrs);该方法就会将token传递给windowManager。<br>参考一篇博客的叙述：在WindowManager中会通过该token生成一个WindowToken对象，一个父窗口对应一个WindowToken，而具有相同token的所有其子窗口都会被归到一个WindowToken中。即如果token相同，表示activity都在一个窗口中。还有个用来标识窗口的类AppWindowToken，继承自WindowToken，它由activity传过来的token生成，和Activity一一对应。通过token，就能找到activity和window的对应关系了。[2]</p>
+<p>根据之前的博客[3]，我们知道在activity的setContentView方法中，会调用windowManager的addView方法，并且该方法会调用到ViewRootImpl 的setView方法。</p>
+<p>那么这个setView除了之前博客中提到的performTraversals和onMeasure onLayout等方法，还在setView方法中调用到了IWindowSession，（ipc调用IwindowSession的add）IWindowSession是windowManager和windowManagerService之间通信的桥梁，其中IWindowSession是AIDL文件。这里介绍一下AIDL[4]。</p>
+<p>AIDL，全称Android Interface Definition Language，Android接口定义语言。根据官方文档。On Android, one process cannot normally access the memory of another process.So to talk, they need to decompose their objects into primitives that the operating system can understand。Android系统中的进程之间不能共享内存，因此，需要提供一些机制在不同进程之间进行数据通信。关于AIDL和Binder的介绍，会在后面继续研究，这里继续窗口管理方面的研究。</p>
+<p>总结一下，在windowManager中调用到的setView，会调用到ViewRootImpl，该类会通过ipc调用IWindowSession的add方法，并最终调用到WindowManagerService的addView方法，而ViewRootImpl其实为handler，他也通过IWindow来接收WindowManagerService接收指令。下面来介绍WindowManagerService。</p>
+<p>三、WindowManagerService</p>
+<p>WindowManagerService实现了很多有关窗口的功能。按照该篇博客[5]的介绍。WindowManagerService主要完成的实现包括。<br>1.窗口大小和位置（X轴和Y轴）的计算过程。<br>2.窗口的组织方式。<br>3.输入法窗口的调整过程。<br>4.壁纸窗口的调整过程。<br>5.窗口Z轴位置的计算和调整过程。<br>6.Activity窗口的启动窗口的显示过程。<br>7.Activity窗口的切换过程。<br>8.Activity窗口的动画显示过程。</p>
+<p>WindowManagerService源代码比较复杂，这里我们先研究一下窗口的创建过程。<br>首先，关于窗口数据的构建，该篇博客[2]总结的很好，可以作为参考。<br>“首先new一个WindowState类，该类表示一个窗口。结合WindowToken和AppWindowToken，完整的定义了一个窗口内容。接着创建一个管道，用于处理消息输入。再然后调用attach方法，创建和Surface相关的内容，用于和surfaceFlinger交互。这样，整个窗口就搭建完成了。有了WindowState类对窗口属性的保存以及token对窗口归属的标识，之后就可以通过SurfaceFlinger绘制在屏幕上了。之后通过InputManager，也能处理消息和WindowManagerService之间的传递。保证窗口显示内容和用户操作保持一致性。”<br>总结一下windowManagerService的操作<br>1.会new一个WindowState类，结合token定义一个窗口。<br>2.创建一个管道，处理消息输入<br>3.调用attach方法，创建surface相关内容，用来和surfaceFlinger进行交互。</p>
+<p>四、SurfaceFlinger相关内容研究<br>参考[6]博客，Android应用程序连接到SurfaceFlinger服务时，会由SurfaceFlinger服务创建一个类型为Client的Binder对象，并通过该对象来通知SurfaceFlinger来绘制自己的ui。Android应用程序需要传递为数不少的信息给surfaceFlinger。该种数据传递是通过一个系统匿名共享内存来进行。该匿名共享内存实际上是SharedClient，它包含了31个SharedBufferStack。也就是共享缓冲区堆栈。由于一个SharedClient对应一个Android应用程序，而该应用程序可能包含多个窗口。所以我们需要多个SharedBufferStack。同时注意这个SharedBufferStack，他代表缓冲区不止一个，利用N个缓冲区来绘制UI。该SharedBufferStack中保存的只是用来描述UI元数据的，并不是真正的UI数据，真正的UI数据保存在ShareBufferStack对应的GraphicBuffer中。</p>
+<p>参考文献</p>
+<p>[1]<a href="http://developer.android.com/intl/zh-cn/reference/android/view/WindowManager.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/reference/android/view/WindowManager.html</a><br>[2]<a href="http://www.cnblogs.com/noTice520/archive/2012/10/25/2738050.html" target="_blank" rel="external">http://www.cnblogs.com/noTice520/archive/2012/10/25/2738050.html</a><br>[3]<a href="http://andyken.github.io/2015/06/07/the-process-of-activity-setContentView.html">http://andyken.github.io/2015/06/07/the-process-of-activity-setContentView.html</a><br>[4]<a href="http://developer.android.com/intl/zh-cn/guide/components/aidl.html" target="_blank" rel="external">http://developer.android.com/intl/zh-cn/guide/components/aidl.html</a><br>[5]<a href="http://blog.csdn.net/luoshengyang/article/details/8462738" target="_blank" rel="external">http://blog.csdn.net/luoshengyang/article/details/8462738</a><br>[6]<a href="http://blog.csdn.net/luoshengyang/article/details/7846923" target="_blank" rel="external">http://blog.csdn.net/luoshengyang/article/details/7846923</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/WindowManager/">WindowManager</a> <a class="tag tag--primary tag--small t-link" href="/tags/WindowManagerService/">WindowManagerService</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/01/21/Ormlite相关总结/"  data-tooltip="Ormlite相关总结（一）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/09/Android View源码研究及相关知识总结二/" data-tooltip="Android View 源码研究及相关知识总结（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/01/21/Ormlite相关总结/"  data-tooltip="Ormlite相关总结（一）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/09/Android View源码研究及相关知识总结二/" data-tooltip="Android View 源码研究及相关知识总结（二）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/12/10/Android窗口管理研究/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

@@ -1,0 +1,442 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Ormlite相关总结（一） - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="在该篇博客中会通过分析一次ormlite的query操作，来对ormlite的源码进行研究">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Ormlite相关总结（一）">
+<meta property="og:url" content="http://andyken.github.io/2016/01/21/Ormlite相关总结/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="在该篇博客中会通过分析一次ormlite的query操作，来对ormlite的源码进行研究">
+<meta property="og:updated_time" content="2016-04-22T07:05:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ormlite相关总结（一）">
+<meta name="twitter:description" content="在该篇博客中会通过分析一次ormlite的query操作，来对ormlite的源码进行研究">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Ormlite相关总结（一）
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Jan 21 2016 00:00:00 GMT+0800">
+	
+		    1月 21, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>在该篇博客中会通过分析一次ormlite的query操作，来对ormlite的源码进行研究</p>
+<a id="more"></a>
+<p>一、关于Anroid数据库的使用</p>
+<p>最基本的数据库操作流程为<br>（1）首先得到要操作的db<br>（2）调用insert update delete rawQuery query等方法，得到cursor<br>（3）操作得到的Cursor对象<br>（4）调用SQLiteDatabase的close方法释放数据库连接，否则容易出现SQLiteException</p>
+<p>一般我们的实现为<br>（1）定义一个dbHelper继承SQLiteOpenHelper，用来完成数据库升级操作<br>（2）定义一个DBManager，比如BaseDBProvider，封装我们的业务方法，在DBManager构造函数或者某个方法中实例化BaseDBOpenHelper，并得到一个SQLiteDatabase对象，比如getSQLiteOpenHelper().getWritableDatabase();<br>（3）在DBManager中定义insert delete update query等操作<br>（4）调用closeDB方法 在整个应用关闭中执行</p>
+<p>在我们调用getSQLiteOpenHelper().getWritableDatabase();时实际上sqliteOpenHelper就会去完成oncreate和onupgrade等方法<br>在使用com.j256.ormlite.android中我们使用insert等方法，会调用到BaseDaoImpl的create方法，该方法实际上会调用到</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DatabaseConnection connection = connectionSource.getReadWriteConnection()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>此方法会调用到AndroidConnectSource的getReadWriteConnection方法，其中有</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">db = helper.getWritableDatabase()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>在该方法中会调用到</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="function">SQLiteDatabase <span class="title">getWritableDatabase</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">super</span>.getWritableDatabase(getSecKey());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终调用了父类的方法，这里的父类是net.sqlcipher.database中的SQLiteOpenHelper的getWriteDatabase方法。<br>在该方法中有一段代码</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">int <span class="keyword">version</span> = <span class="keyword">db</span>.getVersion();</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">version</span> != mNewVersion) &#123;</span><br><span class="line">                <span class="keyword">db</span>.beginTransaction();</span><br><span class="line">                try &#123;</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">version</span> == 0) &#123;</span><br><span class="line">                        onCreate(<span class="keyword">db</span>);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        onUpgrade(<span class="keyword">db</span>, <span class="keyword">version</span>, mNewVersion);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">db</span>.setVersion(mNewVersion);</span><br><span class="line">                    <span class="keyword">db</span>.setTransactionSuccessful();</span><br><span class="line">                &#125; finally &#123;</span><br><span class="line">                    <span class="keyword">db</span>.endTransaction();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br></pre></td></tr></table></figure>
+<p>其中onCreate和onUpgrade就是在这里调用的。sqlite也是类似。</p>
+<p>二、一次数据库query分析</p>
+<p>同样query等操作也是调用到了BaseDaoImpl的相应方法。<br>比如我们常用的query方法：queryBuilder().where().eq(fieldName, value).query();<br>在该query方法中会调用到QueryBuilder的query方法，最终会调用到ormlite的BaseDaoImpl的query方法。</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">/<span class="keyword">*</span><span class="keyword">*</span></span><br><span class="line">     <span class="keyword">*</span> A short cut to &#123;<span class="comment">@link Dao#query(PreparedQuery)&#125;.</span></span><br><span class="line">     <span class="keyword">*</span>/</span><br><span class="line">    public List<span class="variable">&lt;T&gt;</span> query() throws SQLException &#123;</span><br><span class="line">        return dao.query(prepare());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>其中调用了ormlite的StatementBuilder的如下方法完成了查询语句的prepare。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="type">MappedPreparedStmt</span>&lt;<span class="type">T</span>, <span class="type">ID</span>&gt; prepareStatement(<span class="type">Long</span> limit) <span class="keyword">throws</span> <span class="type">SQLException</span> &#123;</span><br><span class="line">        <span class="type">List</span>&lt;<span class="type">ArgumentHolder</span>&gt; argList = <span class="keyword">new</span> <span class="type">ArrayList</span>&lt;<span class="type">ArgumentHolder</span>&gt;();</span><br><span class="line">        <span class="type">String</span> statement = buildStatementString(argList);</span><br><span class="line">        <span class="type">ArgumentHolder</span>[] selectArgs = argList.toArray(<span class="keyword">new</span> <span class="type">ArgumentHolder</span>[argList.size()]);</span><br><span class="line">        <span class="type">FieldType</span>[] resultFieldTypes = getResultFieldTypes();</span><br><span class="line">        <span class="type">FieldType</span>[] argFieldTypes = <span class="keyword">new</span> <span class="type">FieldType</span>[argList.size()];;</span><br><span class="line">        <span class="keyword">for</span> (int selectC = <span class="number">0</span>; selectC &lt; selectArgs.length; selectC++) &#123;</span><br><span class="line">            argFieldTypes[selectC] = selectArgs[selectC].getFieldType();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="class"><span class="keyword">type</span>.<span class="title">isOkForStatementBuilder</span>(</span>)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">"Building a statement from a "</span> + <span class="class"><span class="keyword">type</span> <span class="title">+</span> " <span class="title">statement</span> <span class="title">is</span> <span class="title">not</span> <span class="title">allowed</span>");</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">MappedPreparedStmt</span>&lt;<span class="type">T</span>, <span class="type">ID</span>&gt;(tableInfo, statement, argFieldTypes, resultFieldTypes, selectArgs,</span><br><span class="line">                (databaseType.isLimitSqlSupported() ? <span class="literal">null</span> : limit), <span class="class"><span class="keyword">type</span>);</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里要注意QueryBuilder和StatementBuilder。QueryBuilder是StatementBuilder的子类，主要用于构建select语句。<br>回到query方法，他会调用到ormlite的BaseDaoImpl中的query方法。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> List&lt;T&gt; query(PreparedQuery&lt;T&gt; preparedQuery) <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    checkForInitialized();</span><br><span class="line">    <span class="function"><span class="keyword">return</span> statementExecutor.<span class="title">query</span><span class="params">(connectionSource, preparedQuery, objectCache)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法会调用到ormlite中的StatementExecutor的query方法</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * <span class="type">Return</span> a list <span class="keyword">of</span> all <span class="keyword">of</span> the data <span class="keyword">in</span> the table that matches the &#123;@link <span class="type">PreparedStmt</span>&#125;. <span class="type">Should</span> be used carefully <span class="keyword">if</span></span><br><span class="line"> * the table <span class="keyword">is</span> large. <span class="type">Consider</span> <span class="keyword">using</span> the &#123;@link <span class="type">Dao</span><span class="comment">#iterator&#125; if this is the case.</span></span><br><span class="line"> */</span><br><span class="line">public <span class="type">List</span>&lt;T&gt; query(<span class="type">ConnectionSource</span> connectionSource, <span class="type">PreparedStmt</span>&lt;T&gt; preparedStmt, <span class="type">ObjectCache</span> objectCache)</span><br><span class="line">        throws <span class="type">SQLException</span> &#123;</span><br><span class="line">    <span class="type">SelectIterator</span>&lt;T, <span class="type">ID</span>&gt; <span class="keyword">iterator</span> =</span><br><span class="line">            buildIterator(/* no dao specified because no removes */null, connectionSource, preparedStmt, objectCache,</span><br><span class="line">                    <span class="type">DatabaseConnection</span>.<span class="type">DEFAULT_RESULT_FLAGS</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="type">List</span>&lt;T&gt; results = new <span class="type">ArrayList</span>&lt;T&gt;();</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">iterator</span>.hasNextThrow()) &#123;</span><br><span class="line">            results.add(<span class="keyword">iterator</span>.nextThrow());</span><br><span class="line">        &#125;</span><br><span class="line">        logger.debug(<span class="string">"query of '&#123;&#125;' returned &#123;&#125; results"</span>, preparedStmt.getStatement(), results.size());</span><br><span class="line">        <span class="keyword">return</span> results;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">iterator</span>.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意到其中就是调用到了buildIterator方法，完成了数据库的查找。</p>
+<figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">public <span class="type">SelectIterator</span>&lt;T, <span class="type">ID</span>&gt; buildIterator(<span class="type">BaseDaoImpl</span>&lt;T, <span class="type">ID</span>&gt; classDao, <span class="type">ConnectionSource</span> connectionSource,</span><br><span class="line">        <span class="type">PreparedStmt</span>&lt;T&gt; preparedStmt, <span class="type">ObjectCache</span> objectCache, <span class="type">int</span> resultFlags) throws <span class="type">SQLException</span> &#123;</span><br><span class="line">    <span class="type">DatabaseConnection</span> connection = connectionSource.getReadOnlyConnection();</span><br><span class="line">    <span class="type">CompiledStatement</span> compiledStatement = null;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        compiledStatement = preparedStmt.compile(connection, <span class="type">StatementType</span>.<span class="type">SELECT</span>, resultFlags);</span><br><span class="line">        <span class="type">SelectIterator</span>&lt;T, <span class="type">ID</span>&gt; <span class="keyword">iterator</span> =</span><br><span class="line">                new <span class="type">SelectIterator</span>&lt;T, <span class="type">ID</span>&gt;(tableInfo.getDataClass(), classDao, preparedStmt, connectionSource,</span><br><span class="line">                        connection, compiledStatement, preparedStmt.getStatement(), objectCache);</span><br><span class="line">        connection = null;</span><br><span class="line">        compiledStatement = null;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">iterator</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (compiledStatement != null) &#123;</span><br><span class="line">            compiledStatement.close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (connection != null) &#123;</span><br><span class="line">            connectionSource.releaseConnection(connection);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中调用了SelectIterator构造函数，该构造函数中会调用到ormlite的AndroidCompiledStatement的runQuery方法。其中AndroidCompileStatement是ormlite-android中的类，他继承ormlite-core中的类CompiledStatement。<br>该方法会调用到该类中的getCursor方法，该getCursor方法得到数据库相关的游标。</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Cursor getCursor() <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">cursor</span> == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">String</span> finalSql = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">max</span> == <span class="keyword">null</span>) &#123;</span><br><span class="line">                finalSql = sql;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                finalSql = sql + <span class="string">" "</span> + <span class="built_in">max</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (cancelQueriesEnabled) &#123;</span><br><span class="line">                cancellationHook = apiCompatibility.createCancellationHook();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="built_in">cursor</span> = apiCompatibility.rawQuery(db, finalSql, getStringArray(), cancellationHook);</span><br><span class="line">            <span class="built_in">cursor</span>.moveToFirst();</span><br><span class="line">            logger.trace(<span class="string">"&#123;&#125;: started rawQuery cursor for: &#123;&#125;"</span>, <span class="keyword">this</span>, finalSql);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (android.database.SQLException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> SqlExceptionUtil.create(<span class="string">"Problems executing Android query: "</span> + finalSql, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">cursor</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中的rawQuery实际上通过类JellyBeanApiCompatibility的rawQuery方法调用了sqlcipher包中的SQLiteDatabase的rawQuery方法。该JellyBeanApiCompatibility类Basic class which provides no-op methods for all Android version.是一个基类，用来给所有Android版本提供非op操作的。</p>
+<p>该SQLiteDatabase的rawQuery方法调用到了rawQueryWithFactory方法。该方法关键的两行代码是</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SQLiteCursorDriver driver = <span class="keyword">new</span> SQLiteDirectCursorDriver(<span class="keyword">this</span>, sql, editTable);</span><br><span class="line">cursor = driver.query(cursorFactory != <span class="literal">null</span> ? cursorFactory : mFactory,selectionArgs);</span><br></pre></td></tr></table></figure>
+<p>调用到了SQLiteDirectCursorDriver的query方法，该方法通过</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mCursor = <span class="keyword">new</span> SQLiteCursor(mDatabase, <span class="keyword">this</span>, mEditTable, query);</span><br></pre></td></tr></table></figure>
+<p>得到cursor。在该cursor中，mCount代表结果个数。但是发现经过构造函数初始化时，mCount仍然为-1，那么查询到底在哪里进行的呢？<br>我们注意到在AndroidCompiledStatement的getCursor方法中的rawQuery下面一行是</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">cursor</span><span class="class">.moveToFirst</span></span><br></pre></td></tr></table></figure>
+<p>该方法Move the cursor to the first row.This method will return false if the cursor is empty.该moveToFirst实际上会调用SQLiteCursor中的getCount方法，该方法会调用fillWindow方法。在该方法中，则是调用到SQLiteQuery的fillWindow方法，并将mCount返回，该fillWindow方法的注释是Reads rows into a buffer. This method acquires the database lock. (这里的lock应该是读锁)。实际上是在这里进行的数据库相关的操作的。</p>
+<p>在StatementExecutor的query中，在得到了iterator后，会调用results.add(iterator.nextThrow());完成关系到java对象的映射，其中调用了<br>BaseMappedQuery的mapRow方法，在该方法中调用了</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (FieldType fieldType : resultsFieldTypes) &#123;</span><br><span class="line">   Object <span class="variable"><span class="keyword">val</span></span> = fieldType.resultToJava(results, colPosMap);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中resultsFieldTypes为相应数据表的实体类，根据我们指定的注解为DatabaseField的字段去数据库中查找该字段。如果找不到，则会抛出SQLException错误。如此完成关系和对象的映射。</p>
+<p>参考文献</p>
+<p>[1]<a href="http://ormlite.com/sqlite_java_android_orm.shtml" target="_blank" rel="external">http://ormlite.com/sqlite_java_android_orm.shtml</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Ormlite/">Ormlite</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/18/Ormlite性能优化总结/"  data-tooltip="Ormlite性能优化总结">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/12/10/Android窗口管理研究/" data-tooltip="Android窗口管理研究">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/02/18/Ormlite性能优化总结/"  data-tooltip="Ormlite性能优化总结">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/12/10/Android窗口管理研究/" data-tooltip="Android窗口管理研究">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/01/21/Ormlite相关总结/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

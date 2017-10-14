@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Speed up your app 研读（二） - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本文为Speed up your app的研读第二部分原文请参照 http://blog.udinic.com/2015/09/15/speed-up-your-app。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Speed up your app 研读（二）">
+<meta property="og:url" content="http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本文为Speed up your app的研读第二部分原文请参照 http://blog.udinic.com/2015/09/15/speed-up-your-app。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/gpu-profiling-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/gpu-profiling-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/gpu-profiling-3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/Hierarchy-Viewer-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/Hierarchy-Viewer-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/overdraw-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/overdraw-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/alpha-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/speed-up-your-app/alpha-2.png">
+<meta property="og:updated_time" content="2015-12-14T03:31:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Speed up your app 研读（二）">
+<meta name="twitter:description" content="本文为Speed up your app的研读第二部分原文请参照 http://blog.udinic.com/2015/09/15/speed-up-your-app。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Speed up your app 研读（二）
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Mon Oct 05 2015 00:00:00 GMT+0800">
+	
+		    10月 05, 2015
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/Android性能/">Android性能</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本文为Speed up your app的研读第二部分<br>原文请参照 <a href="http://blog.udinic.com/2015/09/15/speed-up-your-app。" target="_blank" rel="external">http://blog.udinic.com/2015/09/15/speed-up-your-app。</a><br><a id="more"></a></p>
+<p>一、GPU Profiling</p>
+<p>Android Studio 1.4中新增的功能，主要用于显示GPU的解析</p>
+<p><img src="/assets/images/speed-up-your-app/gpu-profiling-1.png" alt="gpu-profiling-1"></p>
+<p>该图表明了一个frame被解析的过程，颜色代表了解析的不同阶段。</p>
+<p>1.蓝色代表draw：这个部分建立/更新了展示列表对象（display list），这些展示对象随后会被解析成GPU可以理解的OpenGL命令。如果蓝色所占区域较大则可能是因为复杂的视图，需要更多的时间去建立他们的展示列表（display list）。</p>
+<p>2.紫色代表prepare：在android5.0版本中，增加了一个帮助ui线程更快解析ui的线程，他叫做RenderThread，该线程就负责上面第一点提到的工作，将display list 转换为OpenGL命令，并且把它传递到GPU中。当renderThread负责该方面的工作时，ui线程就可以处理下一个frame的工作。而ui线程将所有这些解析所需要的资源传递给renderThread所花费的时间就是紫色部分的时间。如果我们有很多资源需要传递给renderThread，那么势必会花费很多时间。</p>
+<p>3.红色代表process：表示将第一步得到的display list，进行解析，将其转换为OpenGL命令。</p>
+<p>4.黄色代表execute：将得到的OpenGL命令传递给GPU。这个部分由于cpu会附带传递buffer给GPU，而且会期望为了下一个frame得到干净的buffer而成为阻塞进程。并且由于buffer的总数是被限制的。如果GPU很繁忙的话。、</p>
+<p>还有一些其他的阶段，这里就不再介绍，详情可以看原文</p>
+<p>当然，如果我们要使用这个功能，我们首先得开启这个功能。</p>
+<p><img src="/assets/images/speed-up-your-app/gpu-profiling-2.png" alt="gpu-profiling-2"></p>
+<p>或者使用命令行</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb shell dumpsys gfxinfo <span class="tag">&lt;<span class="title">PACKAGE_NAME</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>当然，我们可以选择on screen as bars 这个选项。</p>
+<p><img src="/assets/images/speed-up-your-app/gpu-profiling-3.png" alt="gpu-profiling-3"></p>
+<p>注意观察其中的绿线，超过了绿线就代表超过了16ms，出了问题。</p>
+<p>二、Hierarchy Viewer</p>
+<p><img src="/assets/images/speed-up-your-app/Hierarchy-Viewer-1.png" alt="Hierarchy-Viewer-1"></p>
+<p>这个view hierarchy 在同一行，代表后面的元素是前面元素的子类，而同一列则他们都是同一个父元素的并列子元素。如果高度过于高，比如大于10层，则会在layout和measurement阶段花费我们更多的时间。</p>
+<p>同样注意这里的颜色反映的问题。</p>
+<p><img src="/assets/images/speed-up-your-app/Hierarchy-Viewer-2.png" alt="Hierarchy-Viewer-2"></p>
+<p>三、Overdraw</p>
+<p>Overdraw一般发生在你在某个界面上再画某些东西，比如你在红色背景上再添加一个黄色按钮，那么黄色按钮就是在红色背景上重画一次。Overdraw的存在是正常的，但是为了使我们的APP性能更好，我们要避免一些不必要的OverDraw。重画一次两次是没有关系的，甚至某些小区域重画四次也没有错，但是如果我们在屏幕上看到大部分区域都是红色，那么我们就是遇到了问题。</p>
+<p><img src="/assets/images/speed-up-your-app/overdraw-1.png" alt="overdraw-1"></p>
+<p><img src="/assets/images/speed-up-your-app/overdraw-2.png" alt="overdraw-2"></p>
+<p>看右边的这个例子，这种overdraw往往是因为我们给activity或者fragment设置了默认的全屏背景色。比如默认的主题就会给我们的屏幕设置默认背景色。如果我们的activity有一个默认的覆盖整个屏幕的透明layout，那么我们应该去除掉window的背景色。在onCreate中使用</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">getWindow().setBackgroundDrawable(<span class="literal">null</span>);</span><br></pre></td></tr></table></figure>
+<p>当然我们可以和之前提到的Hierarchy Viewer一起解决这个问题。</p>
+<p>四、Alpha</p>
+<p>setAlpha方法带来的性能问题<br>比如如下图，我们有三个imageview，他们交叠在一起<br>首先如果我们对这三个图片分别使用setAlpha 那么就会出现下面的情况</p>
+<p><img src="/assets/images/speed-up-your-app/alpha-1.png" alt="alpha-1"></p>
+<p>这并不是我们想要的情况，幸运的是操作系统会帮助我们自动进行如下的转换，这种转换使用到了off-screen缓冲，并且会用到一个不会被检测到overdraw层。同时，由于系统不知道什么时候进行这种转换，所以他会对所有的情况都使用这种性能较差的情况。换句话说就是性能会很差。</p>
+<p><img src="/assets/images/speed-up-your-app/alpha-2.png" alt="alpha-2"></p>
+<p>那么如何避免呢<br>1.Textview 使用setTextColor而不是setAlpha</p>
+<p>2.ImageView使用setImageAlpha而不是setAlpha</p>
+<p>3.自定义view，如果不支持交叠view，则可以不使用如下方法，但我们可以覆盖hasOverlappingRendering方法并返回false做到提示系统不使用复杂的处理方式。或者我们也可以覆盖onSetAlpha并返回true来告诉系统，当系统设定alpha的时候自动调用第一种方法。</p>
+<p>五、Hardware Acceleration</p>
+<p>硬件加速有两方面好处，第一方面，它引入了displaylist 结构，用来记录视图绘制所需要的命令，用来更快的解析视图。第二方面就是很多人忽略的，view layers。使用view layers，我们可以解析view至off-screen缓存。这个特性主要用于动画。如果我们不使用这个特性，那么视图就会在每一次应用一个动画的时候进行重绘。在重绘时，也会将重绘操作传递给他的子类，这对于一个复杂的视图，是什么耗时的。</p>
+<p>Using a View layer, we can render the View into an off-screen buffer (as seen earlier, when applying an Alpha channel) and manipulate it as we like. This feature is mainly great for animations, because we can animate complex Views quicker. Without layers, animating a View will invalidate it after changing the animated property (e.g. x coordinate, scale, alpha value etc.). For complex views, this invalidation propagates to all the child views, and they in turn will redraw themselves, a costly operation. Using a View layer, backed by Hardware, a texture is created in the GPU for our view. There are several operations we can apply on that texture without invalidating it, such as x/y position, rotation, alpha and more. All that means, that we can animate a complex view on our screen without invalidating it at all during the animation! This will make the animation much smoother. Here’s a code example how to do this</p>
+<p>硬件加速代码十分简单</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Using the Object animator</span></span><br><span class="line">view.setLayerType(View.LAYER_TYPE_HARDWARE, <span class="keyword">null</span>);</span><br><span class="line">ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(view, View.TRANSLATION_X, <span class="number">20</span>f);</span><br><span class="line">objectAnimator.addListener(<span class="keyword">new</span> AnimatorListenerAdapter() &#123;</span><br><span class="line">    <span class="annotation">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animator animation)</span> </span>&#123;</span><br><span class="line">        view.setLayerType(View.LAYER_TYPE_NONE, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">objectAnimator.start();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Using the Property animator</span></span><br><span class="line">view.animate().translationX(<span class="number">20</span>f).withLayer().start();</span><br></pre></td></tr></table></figure>
+<p>但是在使用硬件加速时，我们需要注意两点<br>1.Clean up after your view，在动画结束以后，将硬件加速占有的内存清除掉，这里可以直接调用withlayer函数。他会在动画结束时帮我们自动清除硬件加速所占有的内存。</p>
+<p>2.同时需要注意如果你使用的是对硬件加速并不支持的动画就会导致硬件加速实际上是失效的。</p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/性能分析工具/">性能分析工具</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/05/Android View源码研究及相关知识总结一/"  data-tooltip="Android View 源码研究及相关知识总结（一）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/10/02/Translation-of-Speed up your app研读一/" data-tooltip="Speed up your app 研读（一）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/11/05/Android View源码研究及相关知识总结一/"  data-tooltip="Android View 源码研究及相关知识总结（一）">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2015/10/02/Translation-of-Speed up your app研读一/" data-tooltip="Speed up your app 研读（一）">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2015/10/05/Translation-of-Speed up your app研读二/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>

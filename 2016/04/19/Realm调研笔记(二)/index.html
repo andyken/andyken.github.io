@@ -1,0 +1,411 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Realm调研笔记（二） - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本篇博客为数据库框架Realm的调研笔记第二篇，第一篇主要是介绍Realm的使用，该篇博客则是根据Realm官网上对其数据库引擎性能优秀的介绍[1]写下自己的一些理解。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Realm调研笔记（二）">
+<meta property="og:url" content="http://andyken.github.io/2016/04/19/Realm调研笔记(二)/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客为数据库框架Realm的调研笔记第二篇，第一篇主要是介绍Realm的使用，该篇博客则是根据Realm官网上对其数据库引擎性能优秀的介绍[1]写下自己的一些理解。">
+<meta property="og:updated_time" content="2016-04-19T12:53:42.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Realm调研笔记（二）">
+<meta name="twitter:description" content="本篇博客为数据库框架Realm的调研笔记第二篇，第一篇主要是介绍Realm的使用，该篇博客则是根据Realm官网上对其数据库引擎性能优秀的介绍[1]写下自己的一些理解。">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Realm调研笔记（二）
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Tue Apr 19 2016 00:00:00 GMT+0800">
+	
+		    4月 19, 2016
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/调研笔记/">调研笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客为数据库框架Realm的调研笔记第二篇，<a href="http://andyken.github.io/2016/03/07/Realm%E8%B0%83%E7%A0%94%E7%AC%94%E8%AE%B0/">第一篇</a>主要是介绍Realm的使用，该篇博客则是根据Realm官网上对其数据库引擎性能优秀的介绍[1]写下自己的一些理解。</p>
+<a id="more"></a>
+<p>一、MVCC 多版本并发控制[2][3]<br>Realm使用MVCC，而不是使用锁来达到Repeated Read级别的事务隔离。这里简单介绍一下MVCC。<br>数据库在事务隔离级别中处理不可重复读时，一种实现方式是使用锁，在一个数据库连接中写数据时，其他数据库连接不能进行读操作，这种方式比较影响性能。另一种方式是使用MVCC，每一个数据库连接拥有一份基于时间的数据库快照，数据库的写操作并不会直接替换数据库中的数据，而是将旧数据标记为废弃，并增加新版本的数据，也就是insert+update的操作方式来存储多个版本的数据，并且该数据的变更只会影响到事务提交之后发生的读操作，在未提交事务之前发生的读操作只会读到该读操作开始的时间时的数据库快照对应的旧版本的数据，正在写的数据对其不可见。同时，如果某个版本的数据已经不存在任何对应的读事务操作，则会将版本的数据回收掉。<br>MVCC中的概念还包括写时拷贝技术，见下面的崩溃保护。<br>不同数据库引擎采用了不一样的MVCC的实现方式，比如innodb[3]，realm的具体实现方式由于代码暂未开源，现在还不得而知。这里需要留待以后继续研究。<br>对比sqlite 通过使用锁来完成read commit级别的事务隔离，Realm的性能优势就体现出来了。</p>
+<p>二、Sting优化<br>Realm中对String进行了优化，Realm使用了类Object-c里面的tagged point的概念。Realm首先会遍历数据库中的字符串，将存放在堆中的重复的字符串转变为存放在栈中的枚举（注：Realm数据库引擎采用C++实现，在C++中枚举存放在栈中），因此加快了查询的速度。</p>
+<p>三、崩溃保护<br>当我们尝试进行数据库更新时，Realm就会启动写时拷贝技术[4]。我们并不直接修改数据，而是在拷贝的数据上进行修改。当我们提交修改的时候，如果此时能够安全同步到硬盘中，则会移动指针到这个新的正式版本上来。这就意味着在最坏的情况下，你只会丢失当前正在进行的修改，而不会丢失所有数据。类似git，当我们需要修改数据时，就开一个分支，在这个分支上进行修改，然后确认可以安全同步时，再将数据同步过来。</p>
+<p>四、零拷贝<br>普通的ORM数据库，当我们需要访问对象中的某个属性时，ORM会将其转换为一个SQL语句，如果还未连接数据库的话则创建一个数据库连接，然后将这个 SQL 语句发送给硬盘，执行检索，从匹配检索的结果中读取所有的数据，然后将它们放到内存当中（也就是内存分配）。然而，这时候你需要对其格式进行反序列化(deserialize)，因为硬盘上存储的格式不能直接在内存中使用。<br>但Realm则是跳过了整个拷贝过程，文件始终是内存映射的，这样无需反序列化操作。</p>
+<p>五、真实的懒加载<br>SQLite等大多数数据库采用水平层级存储数据，就是按行存储，当我们从SQLite中读取数据时，会一并取出一行的数据，而Realm则是垂直层级存储，也就是按列存储，真正用到了某个数据时才会将其加载出来，避免了在磁盘中往返以及读取未使用过的属性。</p>
+<p>六、内部加密<br>SQLCipher的加密方式实际上是挂接到底层引擎，并重做了很多sqlite引擎本身的工作，而Realm则是直接在引擎中进行加密。</p>
+<p>参考文献<br>[1]<a href="https://realm.io/cn/news/jp-simard-realm-core-database-engine/" target="_blank" rel="external">https://realm.io/cn/news/jp-simard-realm-core-database-engine/</a><br>[2]<a href="https://en.wikipedia.org/wiki/Multiversion_concurrency_control" target="_blank" rel="external">https://en.wikipedia.org/wiki/Multiversion_concurrency_control</a><br>[3]<a href="http://blog.csdn.net/chosen0ne/article/details/18093187" target="_blank" rel="external">http://blog.csdn.net/chosen0ne/article/details/18093187</a><br>[4]<a href="https://zh.wikipedia.org/wiki/%E5%AF%AB%E5%85%A5%E6%99%82%E8%A4%87%E8%A3%BD" target="_blank" rel="external">https://zh.wikipedia.org/wiki/%E5%AF%AB%E5%85%A5%E6%99%82%E8%A4%87%E8%A3%BD</a></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Realm/">Realm</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/07/Realm迁移日志/"  data-tooltip="Realm迁移日志">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/03/07/Realm调研笔记/" data-tooltip="Realm调研笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/07/07/Realm迁移日志/"  data-tooltip="Realm迁移日志">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2016/03/07/Realm调研笔记/" data-tooltip="Realm调研笔记">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2016/04/19/Realm调研笔记(二)/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>
