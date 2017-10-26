@@ -1,0 +1,449 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Android流行ORM框架性能对比及Room踩坑总结 - AndyKen&#39;s blog</title>
+    <meta name="author" content="null">
+    
+    
+    <meta name="description" content="本篇文章也发布在公司内部实践者论坛中。
+在工作中发现数据库ORM耗时较多，影响了用户体验，恰巧谷歌在2017IO大会上推出了新的ORM框架Room，该框架和其他Android流行ORM框架有什么不同？该框架的ORM过程是怎样的？其他框架的ORM过程又为什么比他慢？迁移到Room又有什么坑需要注意？本篇文章解答这些问题。
+本篇文章分为三部分，首先介绍Android流行ORM框架ORMLite、Gre">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Android流行ORM框架性能对比及Room踩坑总结">
+<meta property="og:url" content="http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇文章也发布在公司内部实践者论坛中。
+在工作中发现数据库ORM耗时较多，影响了用户体验，恰巧谷歌在2017IO大会上推出了新的ORM框架Room，该框架和其他Android流行ORM框架有什么不同？该框架的ORM过程是怎样的？其他框架的ORM过程又为什么比他慢？迁移到Room又有什么坑需要注意？本篇文章解答这些问题。
+本篇文章分为三部分，首先介绍Android流行ORM框架ORMLite、Gre">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_5.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_6.png">
+<meta property="og:updated_time" content="2017-10-26T12:31:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android流行ORM框架性能对比及Room踩坑总结">
+<meta name="twitter:description" content="本篇文章也发布在公司内部实践者论坛中。
+在工作中发现数据库ORM耗时较多，影响了用户体验，恰巧谷歌在2017IO大会上推出了新的ORM框架Room，该框架和其他Android流行ORM框架有什么不同？该框架的ORM过程是怎样的？其他框架的ORM过程又为什么比他慢？迁移到Room又有什么坑需要注意？本篇文章解答这些问题。
+本篇文章分为三部分，首先介绍Android流行ORM框架ORMLite、Gre">
+    
+    
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+<nav id="sidebar" data-behavior="3">
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Android流行ORM框架性能对比及Room踩坑总结
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Oct 26 2017 00:00:00 GMT+0800">
+	
+		    10月 26, 2017
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/工作总结/">工作总结</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇文章也发布在公司内部实践者论坛中。</p>
+<p>在工作中发现数据库ORM耗时较多，影响了用户体验，恰巧谷歌在2017IO大会上推出了新的ORM框架Room，该框架和其他Android流行ORM框架有什么不同？该框架的ORM过程是怎样的？其他框架的ORM过程又为什么比他慢？迁移到Room又有什么坑需要注意？本篇文章解答这些问题。</p>
+<p>本篇文章分为三部分，首先介绍Android流行ORM框架ORMLite、GreenDao、Room的一些特性。随后介绍他们的ORM过程。最后介绍从ORMLite迁移到Room我们需要注意的坑。</p>
+<a id="more"></a>
+<p>一、ORMLite简介</p>
+<p>ORMLite是一款通过反射完成对象关系映射的<a href="http://ormlite.com/" target="_blank" rel="external">数据库框架</a>。其Android部分在github上有1.2k的star和0.3k的Fork。其使用简单，但由于使用反射，造成了一定的性能开销，其自身提供了ormlite_config机制通过读取文件内容绕过反射来创建数据表。其主要特性如下：</p>
+<p>1.使用反射来完成对象关系的映射，速度较慢。</p>
+<p>2.使用类sql描述sql语句，比如where.eq(“name”,name).and().eq(“deleteTime”,0);</p>
+<p>3.在insert操作后自动设置数据的主键。</p>
+<p>4.支持将父类的变量解析为数据库表字段。</p>
+<p>5.支持sqlcipher。</p>
+<p>6.提供connectionProxy，用于在CRUD等操作时进行统一的逻辑操作，如发送事件等。</p>
+<p>二、GreenDao简介<br>GreenDao是Android平台的一款流行的对象关系映射<a href="http://greenrobot.org/greendao/" target="_blank" rel="external">数据库框架</a>，在github上有8.4k的star和2.4k的fork，jar包大小140KB。<br>其主要特性如下：<br>1.使用自定义的gradle插件来完成sql相关代码的生成。该插件在GreenDao3.0版本后才开始支持，在3.0之前需要我们引入一个greendao generated项目用来生成代码。<br>2.它使用类sql来表示sql语句，类似ORMLite<br>3.他支持懒加载，在查找时，首先返回一个cursor，在我们需要使用到具体数据时，才将之前得到cursor转变为实体对象。<br>4.支持sqlcipher。<br>5.不支持将父类的变量解析为数据库表字段。</p>
+<p>三、Room简介<br>Room同样为Android平台的一款对象关系映射<a href="https://developer.android.com/topic/libraries/architecture/room.html" target="_blank" rel="external">框架</a>，其为2017年谷歌IO推出的Android Architecture Component的一部分，其主要特性如下：<br>1.其使用谷歌官方的注解处理器annotationProcessor完成对注解的解析。<br>2.使用原生sql来表达对数据库的操作。会在编译时会验证字段名称是否匹配，如果有问题，则发生编译错误，而不是运行时故障。<br>3.它还支持同为Android Architecture Component的LiveData，实现数据的动态刷新和绑定组件生命周期功能。<br>4.他并不支持sqlcipher，需要我们使用第三方库来支持。<br>5.支持父类变量解析为数据库表字段。<br>6.默认会让主线程的数据库查询操作崩溃，可以通过allowMainThreadQueries绕过这个限制。</p>
+<p>四、一次insert操作引起的ORM及性能对比<br>这里以插入操作举例，看看Ormlite、GreenDao、Room都是怎样完成ORM的。首先我们需要清楚sql操作的具体执行过程，其包含两大部分，编译和执行，编译阶段又可以分为四个部分：首先是sql解析，也就是检查sql语法错误，检查sql中涉及的表和字段是否存在，生成语法树等，然后是编译，优化，最后是存储到缓存中，便于避免再次解析编译等的开销，在完成sql编译后，会传入我们具体的参数，比如插入的值，查询的值等，就是如下图的placeHolder replacement，最后就是执行。</p>
+<p><img src="/assets/images/room/Room_1.png" alt="Room_1"></p>
+<p>那么一次标准的insert操作的执行过程就为：先构造sql语句，insert into Broker (serverId,name) values(?,?); 随后我们使用SqliteDatabase的compileStatement来编译该语句，编译完语句后，我们使用bindLong、bindString等传入参数，最后执行executeInsert完成数据库的一次插入操作。<br>对于ORMLite，如下图所示，一次insert操作，包括首先调用MappedCreate的build方法，完成sql语句的构造，随后根据我们传入的实体对象，调用FieldType的extractRawJavaFieldValue反射调用对象的get方法获取属性值数组，随后将得到的sql语句和属性值数组传给DatabaseConnection类的insert方法，在该方法中完成sql语句的编译、属性值的绑定和sql语句的执行。所以可以看到根据对象得到属性值的过程是通过反射的，速度慢。</p>
+<p><img src="/assets/images/room/Room_2.png" alt="Room_2"></p>
+<p>再来看下GreenDao的插入操作，如下图所示，GreenDao的一次插入操作很标准，首先我们调用Dao的insert操作后，该方法会调用TableStatements的getInsertStatement，其中又会调用到SqlUtils的createSqlInsert操作完成sql语句的拼接，随后在TableStatements的getInsertStatement中又调用database的compileStatement完成sql语句的编译，生成DatabaseStatement，随后调用我们在make project时生成的BrokerEntityDao的bindValues方法完成属性值的绑定，最后直接executeInsert即可。</p>
+<p><img src="/assets/images/room/Room_3.png" alt="Room_3"></p>
+<p>最后是Room的一次insert操作，如下图所示，首先我们调用的是IBrokerDao_IMPL的insert方法，该方法会调用SharedSQLiteStatement的acquire方法，其中会调用到我们生成的IBroker_IMPL的createQuery方法获取sql语句，这里就不同于GreenDao了，GreenDao中会在代码中完成sql的拼接，而Room则会根据我们在接口方法上的注解生成具体的sql语句，随后编译该sql语句，编译完成后调用生成的IBroker_IMPL的bind方法，完成参数的绑定，随后调用executeInsert完成数据的插入。</p>
+<p><img src="/assets/images/room/Room_4.png" alt="Room_4"></p>
+<p>我们用图表来对比一下ORMLite、GreenDao和Room。对于insert操作，ORMLite由于在得到bind参数时使用反射，速度最慢，GreenDao使用事先生成的代码进行bind，但是其生成sql语句是通过字符串拼接，会有一点时间损耗，而Room则更彻底，连sql语句都为我们生成好。其性能最好。<br>update、get也是类似的，这里ORMLite由于没有updateList的方法，这里的时间还加上了list循环的开销。GreenDao都会调用SqlUtils的createSqlSelect和createSqlUpdate语句生成sql。只不过GreenDao的daoSession有缓存机制，直接从内存中查找。所以GreenDao的get有时候也会快于Room。</p>
+<p><img src="/assets/images/room/Room_5.png" alt="Room_5"></p>
+<p>五、迁移到Room踩坑总结<br>1.Room在版本alpha8中给原始数据类型在初始化时加上了not null限制</p>
+<p><img src="/assets/images/room/Room_6.png" alt="Room_6"></p>
+<p>而由于ORMLite默认允许null，便使得迁移前后的数据库字段的限制不一样，这样在从ORMLite迁移到Room的upgrade中的validateMigration方法便会抛出异常。解决方法是创建新的数据库表，并将之前的数据加上默认值拷贝过来。另外由于Room不支持直接在java类中声明默认值，对于那些包含原始数据类型的初始化语句也需要我们加上默认值。</p>
+<p>2.Room并不支持sqlcipher，需要我们使用<a href="https://github.com/commonsguy/cwac-saferoom" target="_blank" rel="external">第三方库</a>来支持。</p>
+<figure class="highlight sml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SafeHelperFactory</span> factory = new <span class="type">SafeHelperFactory</span>(getDBKey<span class="literal">()</span>.toCharArray<span class="literal">()</span>);</span><br><span class="line"><span class="type">AppDatabase</span> mDb = <span class="type">Room</span>.databaseBuilder(</span><br><span class="line">                         <span class="type">MoneyKeeperApplication</span>.getAppContext<span class="literal">()</span>, <span class="type">AppDatabase</span>.class, <span class="type">DATABASE_NAME</span>)</span><br><span class="line">                         .allowMainThreadQueries<span class="literal">()</span>.openHelperFactory(factory).build<span class="literal">()</span>;</span><br></pre></td></tr></table></figure>
+<p>3.我们可以在创建AppDatabase时传入的callback的onCreate、onOpen方法中完成数据库表初始数据的插入，此时不能使用Room相关的CRUD方法，因为这些方法会调用getWritableDatabase方法，而sqlcipher中的getWritableDatabase方法中会通过变量mIsInitializing检查上次调用是否结束，如果没有结束便会抛出异常getWritableDatabase called recursively。我们可以直接使用onCreate或者onOpen方法参数SupportSQLiteDatabase执行execSql方法，传入原生的sql语句来解决该问题。</p>
+<p>4.Room并没有像ORMLite一样提供connectionProxy，这样如果我们需要在数据库CRUD操作时插入特殊操作如发送数据表变化事件，就不能使用代理类统一处理。我的解决方法是将特殊操作直接添加在BL层的抽象父类的方法中。</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbsDBBL&lt;EntityType</span> <span class="keyword"><span class="keyword">extends</span></span> <span class="title">AbsBasicEntity&gt;</span> &#123;</span></span><br><span class="line"></span><br><span class="line">     public <span class="keyword">abstract</span> <span class="type">IBasicDao</span>&lt;<span class="type">EntityType</span>&gt; getDao();</span><br><span class="line"></span><br><span class="line">     public long insert(<span class="type">EntityType</span> data) &#123;</span><br><span class="line">          long ret = getDao().insert(data);</span><br><span class="line">          postChangeEvent(<span class="type">EntityType</span>.<span class="type">TABLE_NAME</span>);</span><br><span class="line">          <span class="keyword">return</span> ret;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如上代码所示，其中getDao得到Room通过注解生成的包含具体sql语句的接口实现类，在我们调用insert方法后再调用发送事件方法。</p>
+<p>5.Room在insert语句后并不会像ORMLite一样设置插入数据的主键，这样就需要我们手动完成该工作。代码如下：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">long</span> <span class="title">insert</span><span class="params">(EntityType data)</span> </span>&#123;</span><br><span class="line">          <span class="keyword">long</span> now = System.currentTimeMillis();</span><br><span class="line">          data.setClientCreateTime(now);</span><br><span class="line">          data.setClientModifyTime(now);</span><br><span class="line">          <span class="keyword">long</span> id = <span class="keyword">super</span>.insert(data);</span><br><span class="line">          data.setId(id);</span><br><span class="line">          <span class="keyword">super</span>.rawUpdate(data);</span><br><span class="line">          <span class="function"><span class="keyword">return</span> data.<span class="title">getId</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/GreenDao/">GreenDao</a> <a class="tag tag--primary tag--small t-link" href="/tags/ORM/">ORM</a> <a class="tag tag--primary tag--small t-link" href="/tags/ORMLite/">ORMLite</a> <a class="tag tag--primary tag--small t-link" href="/tags/Room/">Room</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/10/14/Android中的数据库搜索技术/" data-tooltip="Android中的数据库搜索技术">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2017 null. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/10/14/Android中的数据库搜索技术/" data-tooltip="Android中的数据库搜索技术">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <h4 id="about-card-name">null</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'andyken';
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+
+
+
+</html>
