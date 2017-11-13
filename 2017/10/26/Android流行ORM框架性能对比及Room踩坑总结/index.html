@@ -26,7 +26,7 @@
 <meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_4.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_5.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/room/Room_6.png">
-<meta property="og:updated_time" content="2017-10-26T12:31:32.000Z">
+<meta property="og:updated_time" content="2017-11-13T08:44:08.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Android流行ORM框架性能对比及Room踩坑总结">
 <meta name="twitter:description" content="本篇文章也发布在公司内部实践者论坛中。
@@ -203,7 +203,8 @@
 <p><img src="/assets/images/room/Room_5.png" alt="Room_5"></p>
 <p>五、迁移到Room踩坑总结<br>1.Room在版本alpha8中给原始数据类型在初始化时加上了not null限制</p>
 <p><img src="/assets/images/room/Room_6.png" alt="Room_6"></p>
-<p>而由于ORMLite默认允许null，便使得迁移前后的数据库字段的限制不一样，这样在从ORMLite迁移到Room的upgrade中的validateMigration方法便会抛出异常。解决方法是创建新的数据库表，并将之前的数据加上默认值拷贝过来。另外由于Room不支持直接在java类中声明默认值，对于那些包含原始数据类型的初始化语句也需要我们加上默认值。</p>
+<p>而由于ORMLite默认允许null，便使得迁移前后的数据库字段的限制不一样，这样在从ORMLite迁移到Room的upgrade中的validateMigration方法便会抛出异常。如何解决？首先考虑创建新的数据库表，加上not null限制，并将之前的数据加上默认值拷贝过来，但是更改表名后，发现低版本升级语句也需要重新修改表名，工作量比较大，因此考虑创建一个临时表，具体过程为：先执行低版本数据表升级语句，随后创建临时表Table_Temp，再将原来表数据迁移到临时表Table_Temp，其中迁移语句需要加上ifnull(“intColumn”,0)，防止由于not null限制导致报错，删除原来表Table，再创建新表Table，包含not null限制，将临时表Table_Temp数据迁移到Table，删除临时表Table_Temp，经测试，上述过程在2000条数据情况下需要花费500ms左右。</p>
+<p>另外由于Room不支持直接在java类中声明默认值，对于那些包含原始数据类型的初始化语句也需要我们加上默认值。</p>
 <p>2.Room并不支持sqlcipher，需要我们使用<a href="https://github.com/commonsguy/cwac-saferoom" target="_blank" rel="external">第三方库</a>来支持。</p>
 <figure class="highlight sml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SafeHelperFactory</span> factory = new <span class="type">SafeHelperFactory</span>(getDBKey<span class="literal">()</span>.toCharArray<span class="literal">()</span>);</span><br><span class="line"><span class="type">AppDatabase</span> mDb = <span class="type">Room</span>.databaseBuilder(</span><br><span class="line">                         <span class="type">MoneyKeeperApplication</span>.getAppContext<span class="literal">()</span>, <span class="type">AppDatabase</span>.class, <span class="type">DATABASE_NAME</span>)</span><br><span class="line">                         .allowMainThreadQueries<span class="literal">()</span>.openHelperFactory(factory).build<span class="literal">()</span>;</span><br></pre></td></tr></table></figure>
 <p>3.我们可以在创建AppDatabase时传入的callback的onCreate、onOpen方法中完成数据库表初始数据的插入，此时不能使用Room相关的CRUD方法，因为这些方法会调用getWritableDatabase方法，而sqlcipher中的getWritableDatabase方法中会通过变量mIsInitializing检查上次调用是否结束，如果没有结束便会抛出异常getWritableDatabase called recursively。我们可以直接使用onCreate或者onOpen方法参数SupportSQLiteDatabase执行execSql方法，传入原生的sql语句来解决该问题。</p>
