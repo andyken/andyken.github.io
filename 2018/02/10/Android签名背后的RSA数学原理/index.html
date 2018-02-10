@@ -1,0 +1,475 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Android签名背后的RSA数学原理 - AndyKen&#39;s blog</title>
+    <meta name="author" content="YueXin Feng">
+    
+    
+    <meta name="description" content="内容概要：在Android签名中，用到了RSA，在使用HTTPS时，其TLS协议也用到了RSA。RSA是如何应用到这两个方面的呢？有什么不同？为什么RSA这么难破解？其中的数学原理又是什么样的？本文就这些问题进行探讨。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Android签名背后的RSA数学原理">
+<meta property="og:url" content="http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="内容概要：在Android签名中，用到了RSA，在使用HTTPS时，其TLS协议也用到了RSA。RSA是如何应用到这两个方面的呢？有什么不同？为什么RSA这么难破解？其中的数学原理又是什么样的？本文就这些问题进行探讨。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_5.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_6.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_7.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_8.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_9.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_10.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_11.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_12.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_13.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_14.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/rsa/math_9.png">
+<meta property="og:updated_time" content="2018-02-10T08:13:10.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android签名背后的RSA数学原理">
+<meta name="twitter:description" content="内容概要：在Android签名中，用到了RSA，在使用HTTPS时，其TLS协议也用到了RSA。RSA是如何应用到这两个方面的呢？有什么不同？为什么RSA这么难破解？其中的数学原理又是什么样的？本文就这些问题进行探讨。">
+    
+    
+    
+        <meta property="og:image" content="/assets/images/mycover.png"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+            <img class="header-picture" src="/assets/images/mycover.png"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="3">
+    
+        <div class="sidebar-profile">
+            <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/mycover.png"/>
+            </a>
+            <span class="sidebar-profile-name">YueXin Feng</span>
+        </div>
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Android签名背后的RSA数学原理
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Sat Feb 10 2018 00:00:00 GMT+0800">
+	
+		    2月 10, 2018
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/源码研究/">源码研究</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>内容概要：在Android签名中，用到了RSA，在使用HTTPS时，其TLS协议也用到了RSA。RSA是如何应用到这两个方面的呢？有什么不同？为什么RSA这么难破解？其中的数学原理又是什么样的？本文就这些问题进行探讨。</p>
+<a id="more"></a>
+<p>一、RSA是什么</p>
+<p>首先简要介绍下RSA，RSA由Ron Rivest，Adi Shamir，Leonard Adleman三人于1977年提出，是一种公开密钥的加密算法，其基于费马-欧拉定理和大数的质因数分解难题，广泛应用在Android签名、SSH、TLS中。</p>
+<p>二、RSA的应用场景</p>
+<p>正如开篇所说，RSA即可以用在Android的签名验证中，也可以用在TLS的加密解密中。他们具体是如何应用的呢？为了让大家更好的理解，我将他们的过程简化，使用具体的数字来加以说明。</p>
+<p>（一）RSA在Android的签名验证中的应用</p>
+<p>首先是前期工作，生成公钥和私钥，我们先随机选择两个不相等的质数p，q，为3和11，用他们的积33作为公钥的一部分，再计算33的欧拉函数：</p>
+<p><img src="/assets/images/rsa/math_1.png" alt="math_1"></p>
+<p>算出结果为20，选择一个小于20且与20互质的正整数作为公钥的另一部分，这里选择7，用数字E代表。再利用费马-欧拉定理的推广计算出私钥D，费马-欧拉定理的推广如下：</p>
+<p><img src="/assets/images/rsa/math_2.png" alt="math_2"></p>
+<p>其中E和D为正整数，且满足</p>
+<p><img src="/assets/images/rsa/math_3.png" alt="math_3"></p>
+<p>使用该公式可以计算出私钥为3</p>
+<p><img src="/assets/images/rsa/math_4.png" alt="math_4"></p>
+<p>此时销毁公钥的组成部分p和q，保留积pq，也就是销毁3和11，保留33。到此，公钥和私钥都已经获得了。<br>下面假设我们Android签名时生成的摘要A为2，在打包时，使用私钥D，通过下面的公式计算出签名8：</p>
+<p><img src="/assets/images/rsa/math_5.png" alt="math_5"></p>
+<p>Android客户端在安装时，取出签名8和公钥E和pq进行验证，也就是7和33，再代入到费马-欧拉定理推广公式中。就可以直接算出摘要</p>
+<p><img src="/assets/images/rsa/math_6.png" alt="math_6"></p>
+<p>计算出摘要后再和存储在本地的摘要，也就是数字2做对比，就可以验证签名是否被篡改了。在GIT的SSH协议中，也是利用的RSA私钥签名，公钥验证的方式，只不过是先由服务端发送一个随机数字给客户端，客户端用私钥签名后，再发给服务端，由服务端用公钥验证。所以，可以说，在签名验证场景中，我们实际上是使用私钥进行签名，使用公钥进行验证。</p>
+<p>（二）RSA在TLS的加解密中的应用<br>RSA在TLS中的主要应用是在三次握手中加解密对话密钥，同样，我们首先得到公钥私钥，这里不再赘述，公钥pq为33，E为7，私钥D为3。在握手时，客户端会生成一个随机数A用于对话密钥，同样假设为2，客户端使用公钥加密该数字：</p>
+<p><img src="/assets/images/rsa/math_7.png" alt="math_7"></p>
+<p>得到加密后的数字29，服务端根据费马-欧拉定理的推广公式利用私钥D进行解密。</p>
+<p><img src="/assets/images/rsa/math_8.png" alt="math_8"></p>
+<p>这样便计算出客户端传来的加密之前的数字为2，所以，可以说，在TLS中等加解密的场景中，我们是使用公钥加密，私钥解密。</p>
+<p>三、RSA为什么难破解</p>
+<p>说完了RSA的两个应用场景，我们来看下为什么RSA难以破解，破解RSA的关键就是找到私钥D，其中私钥D的生成公式为</p>
+<p><img src="/assets/images/rsa/math_3.png" alt="math_3_2"></p>
+<p>我们已知的有公钥E和p与q的积pq，所以找到D的关键就是根据pq得到p和q了，在上面的例子中pq为33，我们可以很轻松的找到其质因数为3和11，但是在实际应用中pq都是大数，其二进制往往有2048位，在目前的数学界中，并没有一个方法可以快速得到大数的质因数，只能通过穷举的方式来得到。按照目前人类的计算机能力，破解可能需要上百年，破解的开销是远远大于你的收益，当然，如果量子计算机被真正掌握，破解也是可以的。</p>
+<p>四、费马-欧拉定理扩展公式的推导</p>
+<p>下面探讨一下RSA的核心公式是如何从费马-欧拉定理推导出来的<br>再回顾一下核心公式</p>
+<p><img src="/assets/images/rsa/math_9.png" alt="math_9"></p>
+<p>而费马-欧拉定理为</p>
+<p><img src="/assets/images/rsa/math_10.png" alt="math_10"></p>
+<p>其中<img src="/assets/images/rsa/math_11.png" alt="math_11"><br>为欧拉函数，代表小于等于n的正整数中，所有与n互质的个数<br>我们将欧拉函数中的n换为两个质数，利用其积性函数的性质，便有了下面的公式</p>
+<p><img src="/assets/images/rsa/math_12.png" alt="math_12"></p>
+<p>继续进行扩展，</p>
+<p><img src="/assets/images/rsa/math_13.png" alt="math_13"></p>
+<p>此时我们可以将ED代入公式中，</p>
+<p><img src="/assets/images/rsa/math_14.png" alt="math_14"></p>
+<p>便得出扩展公式</p>
+<p><img src="/assets/images/rsa/math_9.png" alt="math_9_2"></p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/RSA/">RSA</a> <a class="tag tag--primary tag--small t-link" href="/tags/TLS/">TLS</a> <a class="tag tag--primary tag--small t-link" href="/tags/签名/">签名</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/" data-tooltip="Android流行ORM框架性能对比及Room踩坑总结">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <section class="youyan" id="youyan_comments">
+  <div id="uyan_frame"></div>
+  <script src="http://v2.uyan.cc/code/uyan.js?uid=2154411"></script>
+</section>
+
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2018 YueXin Feng. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2017/10/26/Android流行ORM框架性能对比及Room踩坑总结/" data-tooltip="Android流行ORM框架性能对比及Room踩坑总结">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/02/10/Android签名背后的RSA数学原理/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/mycover.png"/>
+        
+            <h4 id="about-card-name">YueXin Feng</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+
+</html>
