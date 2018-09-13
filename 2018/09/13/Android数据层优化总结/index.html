@@ -16,12 +16,12 @@
 <meta property="og:url" content="http://andyken.github.io/2018/09/13/Android数据层优化总结/index.html">
 <meta property="og:site_name" content="AndyKen's blog">
 <meta property="og:description" content="本篇文章也发布在公司内部实践者论坛中。内容概要：之前曾经介绍过Android流行ORM框架性能对比及Room踩坑总结，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。">
-<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_1.png">
-<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_2.png">
-<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_3.png">
-<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_4.png">
-<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_5.png">
-<meta property="og:updated_time" content="2018-09-13T02:50:08.000Z">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal-1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal-2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal-3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal-4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal-5.png">
+<meta property="og:updated_time" content="2018-09-13T03:05:35.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Android数据层优化总结">
 <meta name="twitter:description" content="本篇文章也发布在公司内部实践者论坛中。内容概要：之前曾经介绍过Android流行ORM框架性能对比及Room踩坑总结，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。">
@@ -206,13 +206,13 @@
 <p>（二）读写线程池分离<br>我们在开启WAL后，便可以拥有多个数据库连接，但是由于WAL为单写多读的特性，如果将读写线程都放在一个线程池里，就有可能造成读线程等待写线程的完成，造成了性能的浪费，我们的实现方式是将读写线程分别放在单独的线程池中，每个线程池对外暴露不同的方法，业务层根据自己的需要调用不同方法即可。</p>
 <p>（三）旧版本的wcdb-room分支不支持并发<br>这是因为Room的实现使用了TEMP TABLE，他不能在数据库连接之间共享，因此基于wcdb的room分支也只支持一个数据库连接，无法支持并发，开启WAL也并没有意义。Room在1.1修复了这个问题，最新版本的wcdb-room分支也支持多个数据库连接了。</p>
 <p>三、开启WAL的效果展示<br>开启WAL后，读写都有优化，如下图，读29000条账单，可以节约1s的时间，写1000条账单数据，可以节约30ms左右的时间。</p>
-<p><img src="/assets/images/wal/wal_1.png" alt="wal_1"></p>
-<p><img src="/assets/images/wal/wal_2.png" alt="wal_2"></p>
+<p><img src="/assets/images/wal/wal-1.png" alt="wal-1"></p>
+<p><img src="/assets/images/wal/wal-2.png" alt="wal-2"></p>
 <p>四、其他优化<br>我们除了完成WAL的优化，还完成了索引的优化、开启mmap的优化、ORM框架的优化：<br>（一）索引优化<br>索引优化分为两个部分，一个是删除无用的索引，一个是选用合适的索引进行查询。这两者都需要使用analyze命令。使用analyze命令，SQLite会创建sqlite_stat1表，如下图：</p>
-<p><img src="/assets/images/wal/wal_3.png" alt="wal_3"></p>
+<p><img src="/assets/images/wal/wal-3.png" alt="wal-3"></p>
 <p>包含表名、索引名以及处于最后一列的索引统计信息，比如showTime索引这一行对应的索引信息”200811 2”，代表一共有200811行数据，使用showTime索引，可以直接从20w条数据中区分出两条数据。我们可以删除那些区分度不够明显的索引，比如上图中的deleteTime、isSynced、imported等索引。减少建立索引的开销。<br>使用analyze命令的另一个好处就是可以让sqlite的查询优化器选择最优的索引进行查询。如下图，未使用analyze命令时选用了区分数据较差的索引deleteTime，而使用analyze后，则使用了区分度较高的索引showTime来查询数据。</p>
-<p><img src="/assets/images/wal/wal_4.png" alt="wal_4"></p>
-<p><img src="/assets/images/wal/wal_5.png" alt="wal_5"></p>
+<p><img src="/assets/images/wal/wal-4.png" alt="wal-4"></p>
+<p><img src="/assets/images/wal/wal-5.png" alt="wal-5"></p>
 <p>（二）使用内存映射I/O<br>SQLite在读写时会浪费一定的性能开销在内核态和用户态的切换上，又由于我们是读写密集型的应用，十分有必要开启mmap，我们可以使用PRAGMA mmap_size=268435456;来开启，需要注意的是，开启mmap后，主要优化的是读，写并不会有显著的更改，这是因为SQLite底层在读时，会首先将需要读的页面内容复制到堆内存块后，再进行读，如果使用内存映射I/O，会尝试直接将请求的页面映射到应用程序的地址空间中，不必再进行复制了，而SQLite在写之前总是需要将页面内容拷贝到堆内存中，这样做一是为了防止在事务提交之前，数据库的更改对其他进程可见，二是防止应用程序中的stray pointers直接毁坏或者覆盖了数据库文件，所以需要将更改放在单独的私有内存中，因此内存映射I/O无法提升写数据库性能。</p>
 <p>（三）ORM框架优化<br>正如上面提到，我们使用Room框架替换了ORMLite，提升了ORM的性能，也在迁移过程遇到不少问题，包括ORMLite和Room对于原始类型的字段限制不一样、不支持SQLCipher、insert后不会自动设置主键等问题，之前在这篇<a href="http://andyken.github.io/2017/10/26/Android%E6%B5%81%E8%A1%8CORM%E6%A1%86%E6%9E%B6%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E5%8F%8ARoom%E8%B8%A9%E5%9D%91%E6%80%BB%E7%BB%93/">文章</a>中介绍过这里就不再赘述了。</p>
 
