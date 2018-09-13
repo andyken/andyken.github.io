@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Android数据层优化总结 - AndyKen&#39;s blog</title>
+    <meta name="author" content="YueXin Feng">
+    
+    
+    <meta name="description" content="本篇文章也发布在公司内部实践者论坛中。内容概要：之前曾经介绍过Android流行ORM框架性能对比及Room踩坑总结，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Android数据层优化总结">
+<meta property="og:url" content="http://andyken.github.io/2018/09/13/Android数据层优化总结/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇文章也发布在公司内部实践者论坛中。内容概要：之前曾经介绍过Android流行ORM框架性能对比及Room踩坑总结，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/wal/wal_5.png">
+<meta property="og:updated_time" content="2018-09-13T02:50:08.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android数据层优化总结">
+<meta name="twitter:description" content="本篇文章也发布在公司内部实践者论坛中。内容概要：之前曾经介绍过Android流行ORM框架性能对比及Room踩坑总结，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。">
+    
+    
+    
+        <meta property="og:image" content="/assets/images/mycover.png"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+            <img class="header-picture" src="/assets/images/mycover.png"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="3">
+    
+        <div class="sidebar-profile">
+            <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/mycover.png"/>
+            </a>
+            <span class="sidebar-profile-name">YueXin Feng</span>
+        </div>
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Android数据层优化总结
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Sep 13 2018 00:00:00 GMT+0800">
+	
+		    9月 13, 2018
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/工作总结/">工作总结</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇文章也发布在公司内部实践者论坛中。<br>内容概要：之前曾经介绍过<a href="http://andyken.github.io/2017/10/26/Android%E6%B5%81%E8%A1%8CORM%E6%A1%86%E6%9E%B6%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E5%8F%8ARoom%E8%B8%A9%E5%9D%91%E6%80%BB%E7%BB%93/">Android流行ORM框架性能对比及Room踩坑总结</a>，除了ORM框架的优化，我们还完成了WAL、索引优化等内容。这篇文章主要介绍这些优化及遇到的问题。</p>
+<a id="more"></a>
+<p>一、开启WAL<br>首先，我们的项目使用SQLCipher加密数据层，SQLCipher是基于SQLite的一款加密数据库，虽然其基于SQLite，但是其Java层并没有暴露出SQLite连接池相关的方法，我们无法通过开启SQLite的WAL功能来开启并发连接，这样就导致我们只有一个数据库连接，读写会相互阻塞，影响应用的速度。为了解决这个问题，我们需要开发一套基于SQLCipher的连接池，但是工作量较大，通过调研我们发现了wcdb数据库框架：wcdb是基于SQLCipher，支持IOS、Android的数据库框架，它使用连接池实现并发读写，可以修复损坏的数据库等功能。<br>由于项目中已经使用了Room框架，我们需要引入wcdb的Room分支，该分支提供了Room初始化需要的WCDBOpenHelperFactory：</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">WCDBOpenHelperFactory <span class="literal">factory</span> = <span class="keyword">new</span> WCDBOpenHelperFactory()</span><br><span class="line">        .passphrase(<span class="string">"passphrase"</span>.getBytes())  <span class="comment">// passphrase to the database, remove this line for plain-text</span></span><br><span class="line">        .cipherSpec(cipherSpec)               <span class="comment">// cipher to use, remove for default settings</span></span><br><span class="line">        .writeAheadLoggingEnabled(<span class="keyword">true</span>);      <span class="comment">// enable WAL mode, remove if not needed</span></span><br><span class="line"></span><br><span class="line">AppDatabase db = Room.databaseBuilder(<span class="keyword">this</span>, AppDatabase.<span class="keyword">class</span>, <span class="string">"app-db"</span>)</span><br><span class="line">                .allowMainThreadQueries()</span><br><span class="line">                .openHelperFactory(<span class="literal">factory</span>)   <span class="comment">// specify WCDBOpenHelperFactory when opening database</span></span><br><span class="line">                .build();</span><br></pre></td></tr></table></figure>
+<p>除了直接使用wcdb的Room分支，我们也可以自己编译wcdb的Room分支来解决一些问题：<br>比如”一次性读取大量数据，每次都出现警告信息”这个<a href="https://github.com/Tencent/wcdb/issues/165" target="_blank" rel="external">问题</a>，这个问题因为CursorWindow一次性分配2MB的内存，如果查询的数据结果集超过2MB，会自动分页，当我们的cursor滚动到后面时会再次查询，影响速度，我们的做法是修改wcdb的Room分支源码，将WCDBDatabase的query方法的返回值从SQLiteCursor.FACTORY.newCursor这个继承于AbstractWindowedCursor的类修改为SQLiteDirectCursor.FACTORY.newCursor(db, masterQuery, editTable, query)。当然我们也可以自定义返回的Cursor，只需要在WCDBOpenHelper的构造函数中添加SQLiteDatabase.CursorFactory参数，就可以定制query返回的cursor：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">WCDBOpenHelper(Context context, String name, <span class="keyword">byte</span>[] passphrase, SQLiteCipherSpec cipherSpec,</span><br><span class="line">            SQLiteDatabase.CursorFactory factory, Callback callback) &#123;</span><br><span class="line">        mDelegate = createDelegate(context, name, passphrase, cipherSpec, factory, callback);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">OpenHelper(Context context, String name, <span class="keyword">final</span> WCDBDatabase[] dbRef,</span><br><span class="line">                   <span class="keyword">byte</span>[] passphrase, SQLiteCipherSpec cipherSpec, SQLiteDatabase.CursorFactory cursorFactory,</span><br><span class="line">                   <span class="keyword">final</span> Callback callback) &#123;</span><br><span class="line">            <span class="keyword">super</span>(context, name, passphrase, cipherSpec, cursorFactory, callback.version,</span><br><span class="line">                    <span class="keyword">new</span> DatabaseErrorHandler() &#123;</span><br><span class="line">                        <span class="annotation">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onCorruption</span><span class="params">(SQLiteDatabase dbObj)</span> </span>&#123;</span><br><span class="line">                            WCDBDatabase db = dbRef[<span class="number">0</span>];</span><br><span class="line">                            <span class="keyword">if</span> (db != <span class="keyword">null</span>) &#123;</span><br><span class="line">                                callback.onCorruption(db);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;);</span><br><span class="line">            mCallback = callback;</span><br><span class="line">            mDbRef = dbRef;</span><br><span class="line">            mAsyncCheckpoint = <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>这样在引入wcdb后，我们只需要在创建Factory时，并开启WAL即可：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="annotation">@VisibleForTesting</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> SupportSQLiteOpenHelper.<span class="function">Factory <span class="title">getFactory</span><span class="params">()</span> </span>&#123;</span><br><span class="line">   <span class="keyword">final</span> SQLiteCipherSpec cipherSpec = <span class="keyword">new</span> SQLiteCipherSpec()</span><br><span class="line">         .setPageSize(<span class="number">1024</span>)</span><br><span class="line">         .setSQLCipherVersion(<span class="number">3</span>);</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> WCDBOpenHelperFactory()</span><br><span class="line">         .passphrase(getDBKey().getBytes())  <span class="comment">// 设置sqlcipher的密码</span></span><br><span class="line">         .cipherSpec(cipherSpec)               <span class="comment">// 设置sqlite的配置，兼容以前sqlcipher创建的数据库</span></span><br><span class="line">         .writeAheadLoggingEnabled(DB_OPTIMIZE_WAL); <span class="comment">// 开启wal，支持并发访问db</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>二、引入WAL的一些问题<br>（一）stetho崩溃问题<br>在引入wcdb和开启WAL之后，我们发现chrome浏览器查看数据库的工具stetho无法用了，主要原因是stetho使用了一个sqlite，wcdb也使用了一个sqlite，存在两个版本不一致的sqlite库，而官方不建议使用两个版本不一致的sqlite访问db。为了解决该问题，我们需要自己编译stetho库，也可以使用github上的<a href="https://github.com/viviwen123/stetho" target="_blank" rel="external">开源库</a>来编译。但是该开源库是基于wcdb的master分支的，若我们使用的是wcdb的Room分支版本，就需要修改一些内容来进行兼容：</p>
+<p>1.签名不一致造成的方法参数类型修改<br>比如：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SqliteDatabseDriver#getTableNames中</span><br><span class="line">Cursor cursor = database.rawQuery("<span class="operator"><span class="keyword">SELECT</span> <span class="keyword">name</span> <span class="keyword">FROM</span> sqlite_master <span class="keyword">WHERE</span> <span class="keyword">type</span> <span class="keyword">IN</span> (?, ?)<span class="string">", new String[]&#123;"</span><span class="keyword">table</span><span class="string">", "</span><span class="keyword">view</span><span class="string">"&#125;);</span></span></span><br></pre></td></tr></table></figure>
+<p>需要改为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Cursor cursor = database.rawQuery("<span class="operator"><span class="keyword">SELECT</span> <span class="keyword">name</span> <span class="keyword">FROM</span> sqlite_master <span class="keyword">WHERE</span> <span class="keyword">type</span> <span class="keyword">IN</span> (?, ?)<span class="string">", (Object[])new String[]&#123;"</span><span class="keyword">table</span><span class="string">", "</span><span class="keyword">view</span><span class="string">"&#125;);</span></span></span><br></pre></td></tr></table></figure>
+<p>2.将android.database.Cursor改为com.tencent.wcdb.Cursor。解决找不到wcdb的Cursor问题NoSuchMethodError。</p>
+<p>（二）读写线程池分离<br>我们在开启WAL后，便可以拥有多个数据库连接，但是由于WAL为单写多读的特性，如果将读写线程都放在一个线程池里，就有可能造成读线程等待写线程的完成，造成了性能的浪费，我们的实现方式是将读写线程分别放在单独的线程池中，每个线程池对外暴露不同的方法，业务层根据自己的需要调用不同方法即可。</p>
+<p>（三）旧版本的wcdb-room分支不支持并发<br>这是因为Room的实现使用了TEMP TABLE，他不能在数据库连接之间共享，因此基于wcdb的room分支也只支持一个数据库连接，无法支持并发，开启WAL也并没有意义。Room在1.1修复了这个问题，最新版本的wcdb-room分支也支持多个数据库连接了。</p>
+<p>三、开启WAL的效果展示<br>开启WAL后，读写都有优化，如下图，读29000条账单，可以节约1s的时间，写1000条账单数据，可以节约30ms左右的时间。</p>
+<p><img src="/assets/images/wal/wal_1.png" alt="wal_1"></p>
+<p><img src="/assets/images/wal/wal_2.png" alt="wal_2"></p>
+<p>四、其他优化<br>我们除了完成WAL的优化，还完成了索引的优化、开启mmap的优化、ORM框架的优化：<br>（一）索引优化<br>索引优化分为两个部分，一个是删除无用的索引，一个是选用合适的索引进行查询。这两者都需要使用analyze命令。使用analyze命令，SQLite会创建sqlite_stat1表，如下图：</p>
+<p><img src="/assets/images/wal/wal_3.png" alt="wal_3"></p>
+<p>包含表名、索引名以及处于最后一列的索引统计信息，比如showTime索引这一行对应的索引信息”200811 2”，代表一共有200811行数据，使用showTime索引，可以直接从20w条数据中区分出两条数据。我们可以删除那些区分度不够明显的索引，比如上图中的deleteTime、isSynced、imported等索引。减少建立索引的开销。<br>使用analyze命令的另一个好处就是可以让sqlite的查询优化器选择最优的索引进行查询。如下图，未使用analyze命令时选用了区分数据较差的索引deleteTime，而使用analyze后，则使用了区分度较高的索引showTime来查询数据。</p>
+<p><img src="/assets/images/wal/wal_4.png" alt="wal_4"></p>
+<p><img src="/assets/images/wal/wal_5.png" alt="wal_5"></p>
+<p>（二）使用内存映射I/O<br>SQLite在读写时会浪费一定的性能开销在内核态和用户态的切换上，又由于我们是读写密集型的应用，十分有必要开启mmap，我们可以使用PRAGMA mmap_size=268435456;来开启，需要注意的是，开启mmap后，主要优化的是读，写并不会有显著的更改，这是因为SQLite底层在读时，会首先将需要读的页面内容复制到堆内存块后，再进行读，如果使用内存映射I/O，会尝试直接将请求的页面映射到应用程序的地址空间中，不必再进行复制了，而SQLite在写之前总是需要将页面内容拷贝到堆内存中，这样做一是为了防止在事务提交之前，数据库的更改对其他进程可见，二是防止应用程序中的stray pointers直接毁坏或者覆盖了数据库文件，所以需要将更改放在单独的私有内存中，因此内存映射I/O无法提升写数据库性能。</p>
+<p>（三）ORM框架优化<br>正如上面提到，我们使用Room框架替换了ORMLite，提升了ORM的性能，也在迁移过程遇到不少问题，包括ORMLite和Room对于原始类型的字段限制不一样、不支持SQLCipher、insert后不会自动设置主键等问题，之前在这篇<a href="http://andyken.github.io/2017/10/26/Android%E6%B5%81%E8%A1%8CORM%E6%A1%86%E6%9E%B6%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94%E5%8F%8ARoom%E8%B8%A9%E5%9D%91%E6%80%BB%E7%BB%93/">文章</a>中介绍过这里就不再赘述了。</p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Stetho/">Stetho</a> <a class="tag tag--primary tag--small t-link" href="/tags/WAL/">WAL</a> <a class="tag tag--primary tag--small t-link" href="/tags/数据层/">数据层</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/02/10/Android签名背后的RSA数学原理/" data-tooltip="Android签名背后的RSA数学原理">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <section class="youyan" id="youyan_comments">
+  <div id="uyan_frame"></div>
+  <script src="http://v2.uyan.cc/code/uyan.js?uid=2154411"></script>
+</section>
+
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2018 YueXin Feng. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/02/10/Android签名背后的RSA数学原理/" data-tooltip="Android签名背后的RSA数学原理">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/09/13/Android数据层优化总结/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/mycover.png"/>
+        
+            <h4 id="about-card-name">YueXin Feng</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+
+</html>
