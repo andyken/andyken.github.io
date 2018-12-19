@@ -1,0 +1,491 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>Kotlin - AndyKen&#39;s blog</title>
+    <meta name="author" content="YueXin Feng">
+    
+    
+    <meta name="description" content="本篇博客介绍一下Kotlin的相关知识，包括Kotlin的一些简介、Kotlin和Swift的对比，Kotlin踩坑总结、Kotlin引入项目的探讨。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Kotlin">
+<meta property="og:url" content="http://andyken.github.io/2018/12/19/Kotlin/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客介绍一下Kotlin的相关知识，包括Kotlin的一些简介、Kotlin和Swift的对比，Kotlin踩坑总结、Kotlin引入项目的探讨。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin5.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin6.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin7.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin8.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin9.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin10.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin11.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin12.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin13.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin14.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin15.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin16.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin17.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin18.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin19.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin20.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin21.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin22.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/kotlin/kotlin23.png">
+<meta property="og:updated_time" content="2018-12-19T05:52:43.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kotlin">
+<meta name="twitter:description" content="本篇博客介绍一下Kotlin的相关知识，包括Kotlin的一些简介、Kotlin和Swift的对比，Kotlin踩坑总结、Kotlin引入项目的探讨。">
+    
+    
+    
+        <meta property="og:image" content="/assets/images/mycover.png"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+            <img class="header-picture" src="/assets/images/mycover.png"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="3">
+    
+        <div class="sidebar-profile">
+            <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/mycover.png"/>
+            </a>
+            <span class="sidebar-profile-name">YueXin Feng</span>
+        </div>
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            Kotlin
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Wed Dec 19 2018 00:00:00 GMT+0800">
+	
+		    12月 19, 2018
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/调研笔记/">调研笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客介绍一下Kotlin的相关知识，包括Kotlin的一些简介、Kotlin和Swift的对比，Kotlin踩坑总结、Kotlin引入项目的探讨。</p>
+<a id="more"></a>
+<p>一、Kotlin简介<br>首先，Kotlin是由JetBrains这个IDE工具开发商开发的，这家开发商开发过Android Studio、IntelliJ等我们熟知的IDE工具，为什么一家IDE开发商要开发一门新的语言呢？设想，如果市面上出现一门新的流行的前端语言，那么JetBrains为了抢占市场，肯定会为其开发IDE工具，如果又出现一门新的流行的后端语言，JetBrains还是需要为其开发新的IDE工具。那么为什么我不能开发一门新的语言，这门语言既可以使用在前端、也可以使用在后端、也可以使用在客户端，JetBrains只需要为这一门语言开发对应的IDE工具，当这门语言十分流行的时候，大家都来用的时候，JetBrains厂商就可以占领市场，并且减少开发IDE的工作量。了解了JetBrains的开发动机，我们就可以理解这门语言为什么要设计成多平台了。Kotlin可编译成Java字节码，所以可以直接运行在Android端、服务端。针对前端，Kotlin还可以编译成JS，Kotlin目前支持ECMAScript5.1，它计划支持到ES6，Kotin还可以通过基于LLVM的编译器编译成无需虚拟机就可运行的原生二机制技术，因此也可以适用于iOS、嵌入式等领域，当然截至1.3，其还是beta版本。<br>简单介绍一下Kotlin的版本现状，Koltin于2011年发布，2012年开源，2016年正式发布1.0，截至2018年11月，最新版本是1.3。<br>按照官网的说法，Kotlin具有简洁、安全、互操作性、工具友好等特性。按我的理解，简洁说的就是减少代码量，安全说的是避免空指针异常，互操作性说的是可直接调用Java代码，工具友好自然是必须的，JetBrains的自家语言，自然会很好的维护。<br>有必要强调一下Kotlin的重要性，外界一直都说Kotlin是Android世界的Swift，我有点小小的不同意，Kotlin对于Android的重要性比Swift对于iOS的重要性高，因为Google和Oracle Java的版权之争，一直让Google如鲠在喉，Google一直想找机会替代掉Java，在2017年Google I/O中，Google就宣布支持Kotlin了，并且他发布了KTX等工具，帮助开发Android程序。<br>最后，我想说下Kotlin的名字来源，Kotlin的来源名字和Java很像，Java来源是爪哇岛，Kotlin是JetBrains圣彼得堡团队开发的，他们就找了圣彼得堡附近的一座小岛，科特林岛作为新语言的名字。</p>
+<p><img src="/assets/images/kotlin/kotlin1.png" alt="kotlin-1"></p>
+<p>二、Kotlin vs Swift<br>这部分我想用Kotlin和Swift的一些对比，来加深一些Kotlin的理解</p>
+<p><img src="/assets/images/kotlin/kotlin2.png" alt="kotlin-2"></p>
+<p>首先是变量声明，Kotlin和Swift都使用var关键字来声明可变变量，而对于不可变变量，Kotlin使用val，Swift使用let。</p>
+<p><img src="/assets/images/kotlin/kotlin3.png" alt="kotlin-3"></p>
+<p>对于问号的使用都是一样的，使用它来代表变量可以为空</p>
+<p><img src="/assets/images/kotlin/kotlin4.png" alt="kotlin-4"></p>
+<p>关于函数的定义，Kotlin使用fun，Swift使用func，Kotlin使用冒号代表返回值类型，Swift使用-&gt;，Kotlin的if需要使用括号，而Swift则不需要。</p>
+<p><img src="/assets/images/kotlin/kotlin5.png" alt="kotlin-5"></p>
+<p>关于数组的定义，Kotlin必须使用函数来定义，Swift则更灵活。</p>
+<p><img src="/assets/images/kotlin/kotlin6.png" alt="kotlin-6"></p>
+<p>关于循环，Kotlin和Swift都支持..来表示区间，Kotlin还支持用step来表示步长。</p>
+<p><img src="/assets/images/kotlin/kotlin7.png" alt="kotlin-7"></p>
+<p>关于类，Kotlin默认不支持继承，而Swift支持继承，Kotlin要想使用继承，需要使用open，表示其可以继承，Kotlin还使用constructor来表示主构造器，且可以分为主和次构造器，在次构造器中可以使用this来调用主构造器，而Swift则支持便利构造函数，可以根据给定参数判断是否创建对象，而不像指定构造函数那样必须要实例化一个对象出来。</p>
+<p><img src="/assets/images/kotlin/kotlin8.png" alt="kotlin-8"></p>
+<p>Kotlin的条件判断使用when，并且不需要break关键字，在条件中可以使用逗号和前面提到的..区间操作符。而Swift则还可以使用where来进行判断。</p>
+<p><img src="/assets/images/kotlin/kotlin9.png" alt="kotlin-9"></p>
+<p>Kotlin居然还支持goto语句，当然我是不建议大家使用的，会让代码看起来很乱。</p>
+<p><img src="/assets/images/kotlin/kotlin10.png" alt="kotlin-10"></p>
+<p>关于内部类，Kotlin的内部类可以访问外部类，而Swift的内部类居然不可以访问外部类，并且Swift也不子类支持覆盖属性，只能覆盖方法，Kotlin和Swift都使用override来覆盖方法。</p>
+<p><img src="/assets/images/kotlin/kotlin11.png" alt="kotlin-11"></p>
+<p>Kotlin不支持静态类型，所以如果使用静态类型这种方法来声明单例会比较复杂，需要使用companion这个伴生对象来声明静态属性。使用时，需要用SingleTon.instance来表示单例，并且和Java一样，在Double check lock这种方式中需要使用锁来保证，而Swfit这里更加智能一些，支持static关键字来声明静态属性。并且也不需要添加同步锁。</p>
+<p>最后总结一下Kotlin和Swift，他们的目标都是多平台，都是抢占市场，因此他们首先需要让开发者用的爽，因此他们的语法设计都十分简洁，他们都支持大量的语法糖。第二，除了用的爽，他们还需要让人用的安全，因此他们都注意类型安全，都在编译时抛出错误。同时，他们还支持各种现代语言的高级特性，比如Lambda表达式等。</p>
+<p>三、Kotlin踩坑总结<br>我使用Android 来将Java转换为Kotlin，但是发现其中有很多坑，这里和大家分享下。</p>
+<p>1.首先是这种转换无法准确区分变量是否可变。比如这里的contactLabelMap，实际上应该是var，因为我使用了volatile，就代表其会有多线程修改，但是转换后将其设置为了val。</p>
+<p><img src="/assets/images/kotlin/kotlin12.png" alt="kotlin-12"></p>
+<p>2.tagList应该不会空，但是转换代码并不会将之前遗留的非空判断给清除。</p>
+<p><img src="/assets/images/kotlin/kotlin13.png" alt="kotlin-13"></p>
+<p>3.匿名内部类的转换错误，上图是转换后的结果，直接编译错误了，实际上应该使用下图来声明。</p>
+<p><img src="/assets/images/kotlin/kotlin14.png" alt="kotlin-14"></p>
+<p><img src="/assets/images/kotlin/kotlin15.png" alt="kotlin-15"></p>
+<p>4.SAM转换歧义问题，首先SAM为single abstract method，像接口中的方法，默认为abstract，就是SAM，Kotlin中的SAM可以使用Lambda来表示。</p>
+<p><img src="/assets/images/kotlin/kotlin16.png" alt="kotlin-16"></p>
+<p>这些SAM在用AS转换工具转换后，转换为了Lambda。注意看这里，如果 lambda 是一个函数的唯一参数，那么调用这个函数时可以省略圆括号<br>如果 lambda 所表示的匿名函数只有一个参数或者没有参数，那么可以省略它的声明以及-&gt;符号（默认会用it来给省略的参数名命名）</p>
+<p>所以下图这种方式实际上是语法正确的，但是为什么还会报编译错误呢，这是因为Async的runOnIoThread方法有两种不同的签名。</p>
+<p><img src="/assets/images/kotlin/kotlin17.png" alt="kotlin-17"></p>
+<p><img src="/assets/images/kotlin/kotlin18.png" alt="kotlin-18"></p>
+<p>如上图，两个方法名称一样，但是参数类型不一样。这样Kotlin就不知道该用哪个方法。<br>怎么解决这个问题呢？一个是不使用Lambda，如下图，使用匿名内部类的方式。</p>
+<p><img src="/assets/images/kotlin/kotlin19.png" alt="kotlin-19"></p>
+<p>第二，是仍然使用Lambda，但是声明对应参数的类型。</p>
+<p><img src="/assets/images/kotlin/kotlin20.png" alt="kotlin-20"></p>
+<p>5.非空和空类型使用错误，如下代码，首先声明可以为空的变量generatedDialog。在create方法中返回generatedDialog，但是由于generatedDialog变量可以为空，而方法的返回值要求为AlertDialog，为非空类型，就会造成编译错误。解决方法是给方法create的返回值AlertDialog加上参数?即可。</p>
+<p><img src="/assets/images/kotlin/kotlin21.png" alt="kotlin-21"></p>
+<p>6.泛型丢失，如下面所示，丢失了ActionListener的泛型和RequestMessage类的泛型。</p>
+<p><img src="/assets/images/kotlin/kotlin22.png" alt="kotlin-22"></p>
+<p><img src="/assets/images/kotlin/kotlin23.png" alt="kotlin-23"></p>
+<p>除了使用AndroidStudio转Java为Kotlin遇到的坑，还有Kotlin和Databinding一起使用造成的编译不通过。一般解决方式有两种，一个是，apply plugin: ‘kotlin-kapt’，一个是关闭databinding增量编译。</p>
+<p>四、引入Kotlin探讨<br>目前引入Kotlin的公司包含Evernote、Coursera、Uber等，国内的包括微信订阅号助手（内测）、Flipboard中国（新代码使用Kotlin，旧代码陆续迁移）可以看到，还是有很多公司很多重要项目已经引入了Kotlin，而引入Kotlin的优点，不言而喻，Google非常支持，很有可能使用Kotlin取代Java，第二和Java互操作性好，不需要修改所有代码，第三就是提升开发效率。<br>就我个人而言，如果有新的项目，一定要引入Kotlin，对于老的项目，可以拿一些新的模块或者老的简单的模块来练练手，无论怎样，我的建议都是立即开始学习Kotlin。</p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Kotlin/">Kotlin</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/10/23/XLOG与MMKV/" data-tooltip="XLOG与MMKV">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <section class="youyan" id="youyan_comments">
+  <div id="uyan_frame"></div>
+  <script src="http://v2.uyan.cc/code/uyan.js?uid=2154411"></script>
+</section>
+
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2018 YueXin Feng. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+</footer>
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/10/23/XLOG与MMKV/" data-tooltip="XLOG与MMKV">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2018/12/19/Kotlin/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/mycover.png"/>
+        
+            <h4 id="about-card-name">YueXin Feng</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+
+</html>
