@@ -294,11 +294,19 @@
 
 
         
-            <section class="youyan" id="youyan_comments">
-  <div id="uyan_frame"></div>
-  <script src="http://v2.uyan.cc/code/uyan.js?uid=2154411"></script>
-</section>
-
+            <!--Leancloud 操作库:-->
+            <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+            <!--Valine 的核心代码库:-->
+            <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+            <div class="comment"></div>
+            <script>
+                new Valine({
+                    el: '.comment', // 
+                    app_id: 'rwwWJmTPnfynpK3wu1gWG1WQ-gzGzoHsz', // 这里填写上面得到的APP ID
+                    app_key: 'YmfpEIrScJwzkV650CGBqIGW', // 这里填写上面得到的APP KEY
+                    placeholder: '请踊跃发言' // 
+                });
+            </script>
         
     </div>
 </article>
