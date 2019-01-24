@@ -1,0 +1,536 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>JVM上 - AndyKen&#39;s blog</title>
+    <meta name="author" content="YueXin Feng">
+    
+    
+    <meta name="description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="JVM上">
+<meta property="og:url" content="http://andyken.github.io/2019/01/24/JVM上/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm14.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm7.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm9.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm8.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm10.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm11.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm13.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm15.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm19.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm16.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm17.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm18.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm20.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm21.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm22.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm12.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm5.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm6.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm23.png">
+<meta property="og:updated_time" content="2019-01-24T11:06:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JVM上">
+<meta name="twitter:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+    
+    
+    
+        <meta property="og:image" content="/assets/images/mycover.png"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+            <img class="header-picture" src="/assets/images/mycover.png"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="3">
+    
+        <div class="sidebar-profile">
+            <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/mycover.png"/>
+            </a>
+            <span class="sidebar-profile-name">YueXin Feng</span>
+        </div>
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            JVM上
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Thu Jan 24 2019 00:00:00 GMT+0800">
+	
+		    1月 24, 2019
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/调研笔记/">调研笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。</p>
+<a id="more"></a>
+<p>一、JVM介绍<br>（1）JVM是什么<br>首先，我们需要回答JVM的作用是什么？Write Once，Run AnyWhere，也就是一次书写，到处执行。我们只需要写一次代码，利用Javac编译成字节码，然后使用JVM将代码转换到对应机器平台上的机器码，帮助我们屏蔽了不同机器、不同平台的细节。</p>
+<p><img src="/assets/images/jvm/jvm1.png" alt="jvm1"></p>
+<p>2）流行及历史JVM介绍<br>Oracle HotSpot VM，源于LongView Technologies公司的VM，后来被Sun公司收购，最后又被甲骨文收购，是目前最流行的JVM。</p>
+<p>BEA JRockit，是REA公司开发的JVM，它是只针对服务端应用场景的JVM，它不太关注程序启动速度，全部代码都靠即时编译器编译后执行。被Oracle收购以后就不再维护，但是Oracle将JRockit的垃圾回收器等优秀特性整合到HotSpot上。</p>
+<p>IBM J9 VM，是IBM公司开发的，在IBM硬件平台和配套IBM产品使用的JVM。它和HotSpot一样，都可以运行在服务端、嵌入式等平台。</p>
+<p>Azul ZingJVM是Azul Systems公司在HotSpot基础上进行大量改进的JVM，它运行于Azul Systems公司的专有硬件，Vega系统上。每个Azul VM实例都可以管理至少数十人CPU和数百GB内存的硬件资源，并提供在巨大内存范围内实现可控的GC时间的垃圾收集器、基于专有硬件优化的线程调度等优秀特性。</p>
+<p>Google Android ART/Dalvik，是Google针对Android平台开发的虚拟机</p>
+<p>还有一些已经被淘汰的VM，比如Microsoft JVM，因为和Sun公司的官司问题，被迫停止更新虚拟机。</p>
+<p>（3）JVM需要有什么？<br>还是来看这幅图</p>
+<p><img src="/assets/images/jvm/jvm1.png" alt="jvm1"></p>
+<p>JVM从字节码到机器执行，需要完成什么操作呢？</p>
+<p><img src="/assets/images/jvm/jvm2.png" alt="jvm2"></p>
+<p>首先，必须要装载字节码文件到内存中，这里就需要classloader及相应的装载流程，包括加载、验证、准备、解析、初始化、使用、卸载。后面会具体介绍</p>
+<p><img src="/assets/images/jvm/jvm3.png" alt="jvm3"></p>
+<p>其次，还需要将装载后的代码进行解释，也就是边运行，边解释成对应的机器码，或者是将热点代码提前编译成机器码并缓存下来，在运行时直接使用该机器码，减少了解释所需要的时间。我们可以配置只用解释或者只用编译，具体命令下次分享会讲到。这里就需要用到解释器和JIT编译器。另外，字节码在内存中进行编译/解释时，是如何运行的，并且字节码中的对象、变量、类信息、常量等需要放在哪里呢？这些就需要Runtime Data Area来帮助我们运行字节码，另外，如果内存空间不够了该怎么办？所以我们还需要GC。如果我们需要调用native applications该怎么办？所以我们还需要JNI。</p>
+<p><img src="/assets/images/jvm/jvm4.png" alt="jvm4"></p>
+<p>这里可以看到JVM的结构，本次分享介绍class文件结构、classloader、JVM内存结构。。</p>
+<p>二、JVM类加载机制<br>JVM类生命周期包含加载、验证、准备、解析、初始化、使用和卸载。其中加载到初始化属于类加载。下面对类加载中的步骤进行逐一进行介绍。</p>
+<p>1.首先是加载，虚拟机规范定义了如下的加载步骤<br>（1）通过一个类的全限定名来获取定义此类的二进制字节流<br>（2）解析类的二进制数据流为方法区内的数据结构<br>（3）在内存中生成一个代表这个类的java.lang.Class对象，作为方法区这个类的各种数据的访问入口。</p>
+<p>这三点规范要求并不具体，如第一条，并没有指名二进制字节流要从哪里获取。虚拟机实现就有很多种，如JSP文件生成，运行时计算生成（动态代理技术）、从网络生成（Applet）等<br>第二点实际上就是将这个字节流存放在方法区中。这里的方法区后面在JVM运行时内存结构还会介绍。另外该过程就包含了将class文件常量池（里面包含字面量和符号引用）存储到运行时常量池的过程，不同的类共用一个运行时常量池，同时在进入运行时常量池的过程中，多个class文件中的常量池相同的字符串只会存在一份存在运行时常量池中。第三，在内存中实例化一个java.lang.Class类的对象（在HotSpot中，Class对象比较特殊，虽然是对象，但是存放在方法区中）这个对象作为程序访问方法区中的这些类型数据的外部接口。</p>
+<p>2.验证，验证字节码是否合法、合理并符合规范，包含四个方面：<br>（1）文件格式验证，主要验证字节流是否符合Class文件规范，比如是否以魔数0xCAFEBABE开头，版本号是否在当前Java虚拟机支持范围内。检查Class文件中的每一项长度是否正确。这里的Class文件的格式规范是怎么样的呢？</p>
+<p>下面介绍下Class的类结构，首先有如下代码：</p>
+<p><img src="/assets/images/jvm/jvm14.png" alt="jvm14"></p>
+<p>他编译后的Class文件如下：</p>
+<p><img src="/assets/images/jvm/jvm7.png" alt="jvm7"></p>
+<p>因为Class文件的结构不允许有分隔符号，所以Class文件里数据项，无论是顺序还是数量都是事先确定好的，哪个字节代表什么含义，长度是多少，先后顺序如何，都不允许被改变。具体顺序参照这个图。</p>
+<p><img src="/assets/images/jvm/jvm9.png" alt="jvm7"></p>
+<p>首先是魔数0xCAFEBABE，每个Class文件的头4个字节称为Magic Number就是魔数。它的唯一作用就是确定这个文件是否为一个能被虚拟机接受的Class文件。使用魔数而不是扩展名来进行识别是由于安全性的考虑，因为扩展名可以随意地改动。魔数下面是版本号，版本号有大小版本号之分，前两个字节0000，代表小版本号，后面0034代表大版本号，换算到10进制后为52，参考这幅图，</p>
+<p><img src="/assets/images/jvm/jvm8.png" alt="jvm8"></p>
+<p>我们可以得到编译器版本为1.8。编译器版本后为常量池大小，001f，十进制31，代表常量池有30项常量，索引值范围是1~30，空出一个索引0，代表不引用任何常量池项目。每一个常量项目都为tag+内容表示。</p>
+<p>我们来看下常量池里的第一个常量项目，由于常量项目格式是tag+内容，这里的0a，就是它的tag，也就是常量类型，参考该图，</p>
+<p><img src="/assets/images/jvm/jvm10.png" alt="jvm10"></p>
+<p>为Methoddef，即类中方法的符号引用。那么它有什么样的存储结构呢？<br>参考下面两张图，它包含了各个常量类型的结构，我们找到Methoddef，他的结构为一字节的tag+两字节的index+两字节的index，对应字节码里的0a 0005 0013，第一个字节为tag，后面四个字节为内容，该内容存储了两个索引值，每个索引值的长度为两个字节，第一个索引值指向classInfo类的常量，第二个索引值指向NameAndType类型的常量。</p>
+<p><img src="/assets/images/jvm/jvm11.png" alt="jvm11"></p>
+<p><img src="/assets/images/jvm/jvm13.png" alt="jvm13"></p>
+<p>再往后，看下一个常量，常量类型为09，也就是Fieldref_info，字段的符号引用。其内容为0014，0015。同样是classInfo常量类和NameAndType常量类的索引项。依次类推，我们可以得到Class文件中的常量池里的常量。如下图</p>
+<p><img src="/assets/images/jvm/jvm15.png" alt="jvm15"></p>
+<p>再往后看，便是访问标志、类、接口等描述</p>
+<p><img src="/assets/images/jvm/jvm19.png" alt="jvm19"></p>
+<p>关于访问标志，参考，</p>
+<p><img src="/assets/images/jvm/jvm16.png" alt="jvm16"></p>
+<p>this_class，0004代表，第四个常量值，为类或接口的符号引用，指向第24个常量，也就是com/netease/moneykeeper/monitor/Test，父类、接口、fields这里不再赘述。我们看后面的方法，其结构为，方法描述+属性</p>
+<p><img src="/assets/images/jvm/jvm17.png" alt="jvm17"></p>
+<p>不同的属性有不同的结构，这里的属性名为Code，其结构如下：</p>
+<p><img src="/assets/images/jvm/jvm18.png" alt="jvm18"></p>
+<p>这里的Code结构还包含其他属性。用同样的方法分析Class结构得到：</p>
+<p><img src="/assets/images/jvm/jvm20.png" alt="jvm20"></p>
+<p>这个方法代表Test类里面的默认构造函数，该method有一个attribute，名为Code，包含max_stack操作数栈和局部变量表的大小，具体的code代码需要查询虚拟机字节码指令，如下</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> aload_0</span><br><span class="line"><span class="number">1</span> invokespecial <span class="preprocessor">#<span class="number">1</span> &lt;java/lang/Object.&lt;init&gt;&gt;</span></span><br><span class="line"><span class="number">4</span> <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+<p>实际上就是调用Object的构造函数。LineNumberTable，代表源码行号与字节码偏移量对应关系，比如源码第6行对应字节码偏移量0。LocalVariableTable，代表栈帧中的局部变量表与Java源码中定义的变量的关系。比如这里的局部变量Test类型的局部变量this，其对应到栈帧中的局部变量表里的第0号槽位。</p>
+<p><img src="/assets/images/jvm/jvm21.png" alt="jvm21"></p>
+<p>再看下第二个方法，和第一个方法类似，我们只看下Code。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> getstatic <span class="preprocessor">#<span class="number">2</span> &lt;java/lang/System.out&gt;</span></span><br><span class="line"><span class="number">3</span> invokevirtual <span class="preprocessor">#<span class="number">3</span> &lt;java/io/PrintStream.println&gt;</span></span><br><span class="line"><span class="number">6</span> <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+<p>getStatic为获取类的静态字段，这里为out，invokevirtual为调用实例方法，这里为printlin。</p>
+<p>最后一个部分就是全局属性：</p>
+<p><img src="/assets/images/jvm/jvm22.png" alt="jvm22"></p>
+<p>这里属性名为SourceFile，其结构为sourcefile_index，这里为Test.java。</p>
+<p>我们再来看最开始的文件格式验证，就能理解了，验证Class文件规范，需要验证魔数、版本号、数据顺序长度等内容。</p>
+<p>（2）元数据验证，验证类的元数据信息是否符合Java规范，因为虽然在编译成字节码时进行了验证，但是字节码还是会被篡改，所以需要再次进行Java规范的验证<br>我们可以把它理解为对类的语义分析，包括类是否有父类，Java中除了Object之外，所有的类都应当有父类。类继承的父类是否不允许被继承，比如final类不允许被继承。非抽象类是否实现父类或者接口中的方法。类中的字段、方法是否和父类产生矛盾等，比如子类中的方法和父类的参数都一致，但是返回值类型不对，造成了重载错误，或者子类中的字段覆盖了父类中的final字段。</p>
+<p>（3）字节码验证是对类中的方法体进行语义分析，来进行验证，比如保证跳转指令不会跳转到不合法的指令上，比如方法体外的指令上。保证方法体中的类型转换是否有效。保证栈帧中的操作数栈的数据类型和指令代码可以配合工作，比如操作数栈里存放了int类型的数据，我们却按long类型数据来使用。</p>
+<p>（4）符号引用验证，也就是验证符号引用是否存在。包括，符号引用是否能找到对应的类；在指定类中是否存在对应的方法和字段；对应的方法和字段的访问性是否可被当前类访问等。什么是符号引用呢？在Java被编译成字节码时，Java类并不知道所引用的类的实际地址，因此只能用符号来代替，比如类org.test.Sample引用了org.test.HelloWorld类，在编译时Sample类并不知道HelloWorld类的实际内存地址，因此只能用符号org.test.HelloWorld来表示HelloWorld类的地址。</p>
+<p>3.准备，正式为类中的静态变量分配方法区中的内存，并且为静态变量设置默认值，这里的默认值是零值，非初始值，零值包括0，0L，false，0.0f，0.0d。比如类的静态变量static int value =123;此阶段会设置value的默认值为0，而不是123。具体如下图。</p>
+<p><img src="/assets/images/jvm/jvm12.png" alt="jvm12"></p>
+<p>4.解析，将运行时常量池里的符号引用替换为直接引用，注意这里的常量池是运行时常量池，存放编译期生成的各种字面量和符号引用。符号引用包括类或接口、字段、类方法、接口方法、方法类型、方法句柄、调用点限定符等七种。</p>
+<p>5.初始化，就是执行类构造器方法，clinit的过程，该方法是由Javac自动收集类中的所有类变量的赋值语句和静态语句块中的语句合并产生的。</p>
+<p>这里我们再来介绍下JVM类加载模型。首先在JVM中，我们需要通过类加载器和类本身来确定类的唯一性。那么设想一个问题，如果用户使用自己的类加载，不使用系统提供的默认加载器来加载rt.jar下的java.lang.Object，那么我们在使用instanceof来判断一个类对象是否是java.lang.Object时就会失败，因为他们并不是同一个类，rt.jar下的java.lang.Object是启动类加载器加载的。</p>
+<p>那么如何解决这个问题呢？这就引入了JVM类加载模型：</p>
+<p><img src="/assets/images/jvm/jvm5.png" alt="jvm5"></p>
+<p>注意，这里并不是继承的关系，是组合的关系，应用程序类加载器会使用扩展类加载，扩展类加载器会使用启动类加载器。这样我们在使用自定义类加载器时，首先不会自己去尝试加载这个类，而是将这个请求委派给父类加载器去完成，每一个层次的类加载器都是如此，因此所有的加载请求最终都应该传送到顶层的启动类加载器中，只有当父加载器反馈自己无法完成这个加载请求时，子加载器才会尝试自己去加载。<br>这个模型还有一个叫法，叫双亲委派模型。这是源于parents delegation model。个人认为叫双亲委派模型比较难理解，还是叫类加载器模型更好。</p>
+<p>三、JVM运行时内存区域划分<br>首先来看下JVM运行时的内存区域划分</p>
+<p><img src="/assets/images/jvm/jvm6.png" alt="jvm6"></p>
+<p>这里有每个线程都独有的程序计数器、Java栈、本地方法栈。也有线程间共享的堆、方法区。注意这里的常量池和方法区，在java1.7常量池从方法区中移动到了堆中，在java1.8，方法区被移除了，添加了元空间。下面对其进行逐一介绍。</p>
+<p>程序计数器，就是当前线程所执行的字节码行号指示器，字节码解释器就是通过程序计数器来选取下一条需要执行的字节码指令。因为线程切换后需要重新恢复到之前的执行位置，所以需要给每个线程都设立一个独有的程序计数器。</p>
+<p>Java栈，每个方法在执行的同时会创建一个栈帧，这个栈帧会随着方法的调用到执行完成在Java栈中入栈和出栈。<br>栈帧中包含局部变量表、方法出口、操作数栈、动态链接等信息。局部变量表包括各种基本数据类型和对象引用。</p>
+<p><img src="/assets/images/jvm/jvm23.png" alt="jvm23"></p>
+<p>关于Java栈，有两个经典的Error，一个是StackOverflowError，一个是OutOfMemoryError。<br>前者是在线程请求栈时，其深度（在编译完成后就可以确定操作数栈和局部变量表大小）大于了虚拟机所允许的深度。第二个是当虚拟机栈动态扩展时，无法申请到足够的内存空间。</p>
+<p>本地方法栈为虚拟机使用到的native方法服务，非常类似Java栈。</p>
+<p>Java堆，用来存放对象实例，其中，根据GC算法，还分为新生代、老年代等。具体GC算法在Java虚拟机下描述。<br>我们在启动某个Java服务时，经常会看到-Xmx -Xms这样的参数。比如，java -server -jar -Xmx128m -Xms64 test.jar。这里的Xms代表初始堆大小，s可以理解为start。Xmx代表最大堆大小，x理解为max。</p>
+<p>方法区，包括静态变量、即时编译器编译后的代码、类结构信息、运行时常量池等信息。<br>方法区并不等价GC垃圾回收里的永久代，很多人把方法区叫永久代，是因为HotSpot使用永久来实现方法区，这样垃圾收集器可以像管理Java堆一样管理这部分内存，减轻了工作量。但是由于永久代有内存空间的最大上限，就导致了使用了永久代作为方法区的HotSpot遇到了方法区内存溢出问题。因此在1.7中将运行时常量池移动到堆中，并在1.8中移除了方法区，使用元空间替代。</p>
+<p>运行时常量池，我们之前在类加载中提到的第二步，解析类的二进制数据流为方法区内的数据结构。二进制数据流就包含了Class文件，Class文件里就包含了类版本信息、字段、方法、接口等描述信息及常量池。在加载后，就将常量池就存储在方法区里的运行时常量池，其他如类版本信息、字段等类结构就存储在方法区非常量池中。<br>运行时常量池包括字面量和符号引用，符号引用前面说过，字母量就可以理解为Java层面的常量，包括字符串常量、声明为final的常量值，还有接口中的字段等。</p>
+<p>其他内存结构，java1.8里移除了方法区，将类信息存储在了本地内存中，本地内存中又叫元空间metaspace，它的大小取决于操作系统可用的虚拟内存大小。<br>直接内存Direct Memory或者叫做Direct Buffer。是NIO里使用的一种本地内存，它使用DirectByteBuffer对象作为这个块内存的引用进行操作，这个直接内存因为生命周期内内存地址不会发生更改，相比于堆内由于GC带来的地址更改，减少了一定的维护工作，因此会更加高效。其他还有Code Cache区域，用来存放JIT生成的热点代码。Thread区域，用来存放Java线程。Compiler，使用JIT所需要的内存开销</p>
+<p>A a = new A();<br>A的类信息，1.8之前存储在方法区中，1.8开始存储在元空间中。a存放在Java栈中。new A()存放在堆中。A中的常量在1.7之前，存放在运行时常量池中，在1.7开始存放在堆上。</p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/JVM/">JVM</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/12/19/Kotlin/" data-tooltip="Kotlin">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <!--Leancloud 操作库:-->
+            <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+            <!--Valine 的核心代码库:-->
+            <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+            <div class="comment"></div>
+            <script>
+                new Valine({
+                    el: '.comment', // 
+                    app_id: 'rwwWJmTPnfynpK3wu1gWG1WQ-gzGzoHsz', // 这里填写上面得到的APP ID
+                    app_key: 'YmfpEIrScJwzkV650CGBqIGW', // 这里填写上面得到的APP KEY
+                    placeholder: '请踊跃发言' // 
+                });
+            </script>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 YueXin Feng. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+	<span id="busuanzi_container_site_uv">
+    总访客<span id="busuanzi_value_site_uv"></span>人
+	</span>
+</footer>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/12/19/Kotlin/" data-tooltip="Kotlin">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/01/24/JVM上/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/mycover.png"/>
+        
+            <h4 id="about-card-name">YueXin Feng</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+
+</html>
