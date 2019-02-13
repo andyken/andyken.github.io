@@ -10,12 +10,12 @@
     <meta name="author" content="YueXin Feng">
     
     
-    <meta name="description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+    <meta name="description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为几个部分，本篇包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。后续将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
 <meta property="og:type" content="blog">
 <meta property="og:title" content="JVM上">
 <meta property="og:url" content="http://andyken.github.io/2019/01/24/JVM上/index.html">
 <meta property="og:site_name" content="AndyKen's blog">
-<meta property="og:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+<meta property="og:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为几个部分，本篇包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。后续将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm1.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm1.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm2.png">
@@ -40,10 +40,10 @@
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm5.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm6.png">
 <meta property="og:image" content="http://andyken.github.io/assets/images/jvm/jvm23.png">
-<meta property="og:updated_time" content="2019-01-24T11:06:32.000Z">
+<meta property="og:updated_time" content="2019-02-13T07:30:02.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM上">
-<meta name="twitter:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
+<meta name="twitter:description" content="接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为几个部分，本篇包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。后续将介绍GC、执行引擎等内容、常用JVM使用参数内容。">
     
     
     
@@ -208,7 +208,7 @@
     
     <div class="post-content markdown" itemprop="articleBody">
         <div class="main-content-wrap">
-            <p>接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为上下两个部分，本篇为jvm上，包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。下篇将介绍GC、执行引擎等内容、常用JVM使用参数内容。</p>
+            <p>接到分享JVM的任务，正好趁此机会梳理下JVM的相关知识。本次分享分为几个部分，本篇包含JVM介绍、JVM类加载机制、Class类结构、JVM运行时内存结构。后续将介绍GC、执行引擎等内容、常用JVM使用参数内容。</p>
 <a id="more"></a>
 <p>一、JVM介绍<br>（1）JVM是什么<br>首先，我们需要回答JVM的作用是什么？Write Once，Run AnyWhere，也就是一次书写，到处执行。我们只需要写一次代码，利用Javac编译成字节码，然后使用JVM将代码转换到对应机器平台上的机器码，帮助我们屏蔽了不同机器、不同平台的细节。</p>
 <p><img src="/assets/images/jvm/jvm1.png" alt="jvm1"></p>
@@ -313,7 +313,7 @@
         <ul class="post-actions post-action-nav">
             <li class="post-action">
                 
-                    <a class="post-action-btn btn btn--disabled">
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/02/13/JVM_GC/"  data-tooltip="JVM的GC">
                 
                     <i class="fa fa-angle-left"></i>
                     <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
@@ -409,7 +409,7 @@
         <ul class="post-actions post-action-nav">
             <li class="post-action">
                 
-                    <a class="post-action-btn btn btn--disabled">
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/02/13/JVM_GC/"  data-tooltip="JVM的GC">
                 
                     <i class="fa fa-angle-left"></i>
                     <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>

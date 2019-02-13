@@ -1,0 +1,541 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="AndyKen&#39;s blog">
+    <title>JVM的GC - AndyKen&#39;s blog</title>
+    <meta name="author" content="YueXin Feng">
+    
+    
+    <meta name="description" content="本篇博客为JVM分享的系列之一，本次分享GC相关内容，包括GC算法、常用垃圾回收器以及GC调优思路。">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="JVM的GC">
+<meta property="og:url" content="http://andyken.github.io/2019/02/13/JVM_GC/index.html">
+<meta property="og:site_name" content="AndyKen's blog">
+<meta property="og:description" content="本篇博客为JVM分享的系列之一，本次分享GC相关内容，包括GC算法、常用垃圾回收器以及GC调优思路。">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc1.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc2.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc3.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc4.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc5.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc6.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc7.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc8.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc9.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc10.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc11.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc12.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc13.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc14.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc15.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc16.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc17.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc18.png">
+<meta property="og:image" content="http://andyken.github.io/assets/images/gc/gc19.png">
+<meta property="og:updated_time" content="2019-02-13T09:12:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JVM的GC">
+<meta name="twitter:description" content="本篇博客为JVM分享的系列之一，本次分享GC相关内容，包括GC算法、常用垃圾回收器以及GC调优思路。">
+    
+    
+    
+        <meta property="og:image" content="/assets/images/mycover.png"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style.min.css" type="text/css">
+    <!--STYLES END-->
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="3">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <h1 class="header-title">
+        <a class="header-title-link" href="/ ">AndyKen&#39;s blog</a>
+    </h1>
+    
+        
+            <a  class="header-right-picture "
+                href="/#about">
+        
+        
+            <img class="header-picture" src="/assets/images/mycover.png"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="3">
+    
+        <div class="sidebar-profile">
+            <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/mycover.png"/>
+            </a>
+            <span class="sidebar-profile-name">YueXin Feng</span>
+        </div>
+    
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/ "
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-home"></i>
+                    <span class="sidebar-button-desc">首页</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-categories"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-bookmark"></i>
+                    <span class="sidebar-button-desc">分类</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/all-tags"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-tags"></i>
+                    <span class="sidebar-button-desc">标签</span>
+                </a>
+        </li>
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link "
+                         href="/#about"
+                        
+                    >
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-question"></i>
+                    <span class="sidebar-button-desc">关于</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+        <ul class="sidebar-buttons">
+        
+            <li class="sidebar-button">
+                
+                    <a  class="sidebar-button-link " href="https://github.com/andyken" target="_blank">
+                
+                    <i class="sidebar-button-icon fa fa-lg fa-github"></i>
+                    <span class="sidebar-button-desc">Fork me on GitHub</span>
+                </a>
+        </li>
+        
+    </ul>
+    
+</nav>
+
+            
+            <div id="main" data-behavior="3"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post" itemscope itemType="http://schema.org/BlogPosting">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title" itemprop="headline">
+            JVM的GC
+        </h1>
+    
+    <div class="post-meta">
+    <time itemprop="datePublished" content="Wed Feb 13 2019 00:00:00 GMT+0800">
+	
+		    2月 13, 2019
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/categories/调研笔记/">调研笔记</a>
+
+
+    
+    
+         <span id="busuanzi_container_page_pv">
+            本文浏览量<span id="busuanzi_value_page_pv"></span>次
+        </span>
+    
+</div>
+</div>
+    
+    <div class="post-content markdown" itemprop="articleBody">
+        <div class="main-content-wrap">
+            <p>本篇博客为JVM分享的系列之一，本次分享GC相关内容，包括GC算法、常用垃圾回收器以及GC调优思路。</p>
+<a id="more"></a>
+<p>一、GC算法</p>
+<p>1.GC是什么？</p>
+<p>首先我们来看GC算法的内容，我们需要先回答一个问题？为什么需要GC？之前曾经介绍过启动一个Java服务的语句为</p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -<span class="keyword">server</span> -jar -Xmx128m -Xms64 test.jar</span><br></pre></td></tr></table></figure>
+<p>其参数Xmx，Xms对应到JVM的内存结构里的堆，内存结构如下图</p>
+<p><img src="/assets/images/gc/gc1.png" alt="gc1"></p>
+<p>堆的大小是有限制的，按照上面的参数，初始64M，最多也就128M，即使我们不指定该参数，JVM给一个服务设置的堆空间也是有限的，当随着程序的运行，堆中的实例越来越多，可用空间越来越小，这就需要垃圾回收帮助我们清理堆，清除无用的对象实例，释放空间。<br>当然，不仅仅是堆需要做垃圾回收工作，方法区/元空间里的类信息如果我们不再使用，也需要释放。而线程独有的程序计数器、Java栈、本地方法栈等信息会随着方法的调用和结束而自动消亡，不需要使用GC。</p>
+<p>再来看另外一个问题，我们如何判断实例/类是否需要回收呢？</p>
+<p>2.如何判断实例是否需要回收？</p>
+<p>有两种方法可以判断，一种为引用计数法，一种为可达性分析。</p>
+<p>（1）引用计数法<br>给内存中的实例打上标记，对象被引用一次，计数加1，引用被释放了，计数减1，当这个计数为0的时候，这个对象就可以被回收了。看上去很简单，但是需要解决循环引用的问题</p>
+<figure class="highlight fix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">objA.instance</span>=<span class="string">objB</span><br><span class="line">objB.instantce=objA</span></span><br></pre></td></tr></table></figure>
+<p>除此之外，没有任何引用，实际上这两个对象应该被回收掉，但是由于引用计数不为0，导致无法回收。就是因为这个原因，使得Java没有选择引用计数法来判断实例实例是否需要回收。</p>
+<p>（2）可达性分析<br>定义一些不会被回收的GC Roots节点，如果某个对象由root出发，可以达到，就不会被回收，如果对象不能由root达到，就会被回收。如下图，左边的object1，object2，object3都是可以由GC Roots达到的，所以不需要被回收，而右边的object4,object5,object6都无法从GC Roots达到，所以需要被回收。</p>
+<p><img src="/assets/images/gc/gc2.png" alt="gc2"></p>
+<p>可达性分析解决了循环引用的问题，所以Java就选择了该种方法。</p>
+<p>那么哪些节点会被算作是GC Roots节点呢？方法区中的类静态属性引用的对象，方法区常量池引用的对象，JVM栈中本地变量表引用的对象（包括方法参数和方法内部定义的局部变量），JVM本地方法栈引用的对象。</p>
+<p>3.如何判断类信息是否需要回收？</p>
+<p>除了实例，我们还需要判断方法区/元空间中的类信息是否需要被回收。判断类信息需要判断类的所有实例被回收，加载该类的ClassLoader被回收，该类对应的java.lang.Class对象没有在任何地方被引用，且没有在任何地方通过反射访问该类的方法。因为方法区的回收并不是强制性的，JVM虚拟机规范并没有要求一定要实现，另外由于其一次回收，往往回收空间也不多，效率不高，其回收算法也非常复杂，所以我们这里就略过该回收，重点说下实例的回收。</p>
+<p>4.实例如何被回收？</p>
+<p>有三种回收方法，标记-清除，复制，标记-整理。标记-清除算法是最基础算法，标记-整理和复制算法都是为了解决标记-清除算法的一些问题而提出的。</p>
+<p>（1）标记-清除（Mark-Sweep）</p>
+<p><img src="/assets/images/gc/gc3.png" alt="gc3"></p>
+<p>解释下该图，深色区域代表对象。每个对象根据大小会有不同大小的分块。<br>首先是标记阶段，第一遍遍历，采用深度优先的算法，查看堆中的实例是否是由根节点可达的，若可达，我们在对象头中进行标记。</p>
+<p>第二遍遍历，将没有被标记的对象作链接到空闲链表中。如果发现有连续的分块时，就会将其进行合并。用于后续的分配阶段。</p>
+<p><img src="/assets/images/gc/gc4.png" alt="gc4"></p>
+<p>再新建一个实例时，从这个空闲链表中查找合适大小的分块分配给实例。查找合适大小的分块有不同的策略，一个是First-Fit，返回找到的第一个大于该对象大小的分块，Best-Fit，找到大于该对象大小分块中最小的分块。Worst-Fit，找到最大的分块。</p>
+<p>该算法的缺点是会引起碎片化，因为我们是从空闲链表中查找合适的空间，空间并不是连续的，势必会造成有些内存无法被使用。</p>
+<p><img src="/assets/images/gc/gc5.png" alt="gc5"></p>
+<p>同时，该算法由于要进行三遍遍历（标记、清除、分配新对象），导致速度慢。</p>
+<p>（2）复制（Copying）<br>将原来的空间分为From空间和To空间，当From空间被完全占满时，GC会将活动对象全部复制到To空间，再清空From空间，最后再把From空间和To空间调换。</p>
+<p><img src="/assets/images/gc/gc6.png" alt="gc6"></p>
+<p>不同于标记-清除算法，只需要一遍遍历，将从根节点可达的节点移动到To空间即可。</p>
+<p><img src="/assets/images/gc/gc7.png" alt="gc7"></p>
+<p><img src="/assets/images/gc/gc8.png" alt="gc8"></p>
+<p>复制算法的优点就是速度快（一遍遍历）、不会发生碎片化。缺点是堆的使用效率低下，因为你要将堆拆分程一半一半来使用。</p>
+<p>（3）标记-整理（Mark-Compact）</p>
+<p>标记-整理算法基于标记-清除和复制算法，标记阶段同标记-清除，整理阶段将对象移动，以确保移动后的对象占用连续的内存空间。</p>
+<p>标记阶段</p>
+<p><img src="/assets/images/gc/gc9.png" alt="gc9"></p>
+<p>整理阶段，将活动对象移动到一边，确保后续新对象占用连续空间。</p>
+<p><img src="/assets/images/gc/gc10.png" alt="gc10"></p>
+<p>该算法的优点是清除阶段整理内存，不会产生内存碎片，第二，不分From-To空间，堆利用效率高。其缺点是整理时移动对象花费计算成本，相比于标记-清除阶段只需要一遍遍历即可清除，整理算法需要先遍历一遍更新指针，再遍历一遍移动对象。</p>
+<p>二、常用垃圾收集器</p>
+<p>介绍完了GC算法，我们来介绍下常用的垃圾收集器（HotSpot垃圾收集器），不同的垃圾收集器使用不同的GC算法，有的是串行，有的是并行。他们有不同的应用场景。</p>
+<p>1.Serial GC</p>
+<p>最古老的垃圾收集器，Serial代表了单线程，其实现精简，初始化简单，新生代采用复制算法、老年代采用标记-整理算法。是Client模式下的JVM默认选项，其新生代的收集器叫做Serial GC，老年代的收集器叫做Serial Old GC。</p>
+<p><img src="/assets/images/gc/gc11.png" alt="gc11"></p>
+<p>进行垃圾收集过程中，会进入Stop-the-world，暂停当前所有运行线程，找到GC Roots建立关系，我们可以把它理解为打扫时不能工作。虽然Serial GC会进入stop the world 但是由于其本身开销不大（包括GC数据结构和线程开销都非常小）随着云计算的兴起，在Serverless等应用场景下，Serial GC找到了新的舞台。另外在单CPU环境下，由于Serial GC不存在线程切换开销，在堆大小不大的情况下，停顿时间在几十毫秒，只要不频繁发生，这点开销开始可以接受的。</p>
+<p>2.ParNew GC</p>
+<p>为了能够利用好多CPU的环境，提出了ParNew GC，它是一种新生代GC实现，是Serial GC的新生代多线程版本（复制算法），配合CMS GC完成老年代回收。</p>
+<p><img src="/assets/images/gc/gc12.png" alt="gc12"></p>
+<p>我们可以把他理解为打扫时不能工作，但是由于有多个GC线程，所以其停顿时间较多。</p>
+<p>3.Parallel GC</p>
+<p>类似Serial GC，新生代复制、老年代标记-整理，但是它是一种吞吐量优先的GC，其新生代GC和老年代GC都是并行运行，是JDK8及以前Server模式下的JVM默认GC选择。</p>
+<p><img src="/assets/images/gc/gc13.png" alt="gc13"></p>
+<p>同样会发生Stop-the-world，可以理解为打扫时不能工作，但是由于使用并行，其停顿时间短。根据新生代和老年代，其分为Parallel Scavenge GC、Parallel Old GC。</p>
+<p>4.CMS GC（Concurrent Mark Sweep）</p>
+<p>基于标记-清除算法，为了减少停顿时间，其让工作线程和GC线程并行。</p>
+<p><img src="/assets/images/gc/gc14.png" alt="gc14"></p>
+<p>其中初始标记、重新标记仍然需要stop-the-world，初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC RootsTracing的过程，而重新标记阶段则是为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那个一部分对象的标记记录，这个阶段的停顿时间会比初始化标记阶段稍长一些。但远比并发标记的时间短。</p>
+<p>虽然其能够很好的解决stop-the-world带来的停顿问题，但是由于其基于的是标记-清除算法，会导致内存碎片问题，内存碎片过多会导致Full GC，导致更长时间的停顿。所以在JDK9中已经标记为废弃了。</p>
+<p>5.G1 GC</p>
+<p>G1 GC也是为了解决stop-the-world问题，它和CMS很类似，但是其基于的是标记-整理和复制算法。G1引入了一个region的概念。</p>
+<p><img src="/assets/images/gc/gc15.png" alt="gc15"></p>
+<p>其中默认有2048个region，每个region从1M到32M。其中Eden Survivor为新生代，Survivor理解为From/to区域。old、Humongous老年代。Humongous大对象区域，可能占据多个region，由于大对象的GC操作很昂贵，我们把Humongous算作老年代。其新生代是并行复制，老年代是并行标记，但是和新生代一同进行整理。</p>
+<p>其回收过程和CMS类似</p>
+<p><img src="/assets/images/gc/gc16.png" alt="gc16"></p>
+<p>初始标记：只是标记GC Roots能直接关联到的对象，需停顿。并发标记：从GC Root开始对堆中对象进行可达性分析，和用户程序并行。最终标记：修正并发标记期间产生变动的记录，需停顿。筛选回收：待回收进行成本排序。</p>
+<p>6.其他GC<br>这里介绍两个JDK11新增的GC。</p>
+<p>Epsilon GC：不做垃圾收集的GC，判断GC本身产生的开销。ZGC：支持T bytes级别的堆大小，仅支持Linux64平台。</p>
+<p>三、GC调优思路<br>具体思路为，查看JVM GC状态。调整参数或配置、选择合适的GC类型。验证是否达到调优目标。下面介绍下如何查看JVM的GC状态以及调整参数</p>
+<p>1.查看JVM GC状态</p>
+<p>有两种命令方法，jstat命令查看GC状态</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jstat -gc <span class="number">12345</span> <span class="number">5000</span></span><br></pre></td></tr></table></figure>
+<p>每5s打印一下12345进程的gc情况，包括新生代、老年代、永久代的容量和GC次数和耗时。</p>
+<p>启动tomcat时打开GC日志</p>
+<figure class="highlight haml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-<span class="ruby"><span class="constant">XX</span><span class="symbol">:+PrintGCDetails</span></span></span><br></pre></td></tr></table></figure>
+<p>jstat和gc日志都会打印出如下内容</p>
+<p><img src="/assets/images/gc/gc17.png" alt="gc17"></p>
+<p>Full GC说明这是完全垃圾收集。PSYoungGen表示新年代使用的是多线程垃圾收集器Parallel，11456K垃圾收集前新生代占用量，0K是垃圾收集后新生代的占用量，110400K代表该区域总容量。PSOldGen：651536K-&gt;58466K是老年代信息，PSOldGen表示老年代使用的是多线程垃圾收集器Parallel，651536K是垃圾收集前老年代占用量，58466K是垃圾收集后老年代的占用量。66299K-&gt;58466K是Java堆的使用情况，是收集前后新生代和老年代占用的累计。PSPerm是永久代信息。1.1178951是垃圾收集花费的时间，Time:user=1.01 sys=0.00这行是CPU的使用时间，user是垃圾收集执行非操作系统调用指令所耗费的CPU时间（用户态CPU时间）sys是垃圾收集器执行操作系统调用所耗费的CPU时间。real是垃圾收集的实际时间（用户态CPU时间+切换用户态核心态时间）</p>
+<p>也可以使用图形化工具分析</p>
+<p>（1）JConsole</p>
+<p><img src="/assets/images/gc/gc18.png" alt="gc18"></p>
+<p>（2）VisualVM</p>
+<p><img src="/assets/images/gc/gc19.png" alt="gc19"></p>
+<p>具体使用就不介绍了。</p>
+<p>2.调整参数或类型</p>
+<p>（1）通过状态、日志发现新生代GC非常耗时，代表新生代太大，我们可以考虑减小新生代的最小比例-XX:G1NewSizePercent，或者降低新生代最大值-XX:G1MaxNewSizePercent。</p>
+<p>（2）发现Mixed GC延迟较长，代表一次Mixed GC的region太多，减小一次Mixed GC中的region比例-XX:G1OldSetRegionThresholdPercent，或者提高一次Mixed GC的个数-XX:G1MixedGCCountTarget。其他调整类似，这里不再赘述。</p>
+<p>（3）发现GC不合适，就要调整GC类型。<br>响应速度优先：Serial GC：适用单CPU环境下的Client模式<br>ParNew GC：多CPU环境下Server模式<br>CMS GC：低延迟，但是有内存碎片问题<br>G1 GC：低延迟，服务端应用<br>吞吐量：Parallel GC：后台运算</p>
+<p>（4）升级到较新的JDK版本<br>由于GC还在不断发展，较新的JDK版本意味着更新的技术，更短的停顿，我们可以升级版本来直接提升性能。</p>
+
+            
+                
+
+            
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/GC/">GC</a> <a class="tag tag--primary tag--small t-link" href="/tags/JVM/">JVM</a>
+
+            </div>
+        
+        <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/01/24/JVM上/" data-tooltip="JVM上">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+            <!--Leancloud 操作库:-->
+            <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+            <!--Valine 的核心代码库:-->
+            <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+            <div class="comment"></div>
+            <script>
+                new Valine({
+                    el: '.comment', // 
+                    app_id: 'rwwWJmTPnfynpK3wu1gWG1WQ-gzGzoHsz', // 这里填写上面得到的APP ID
+                    app_key: 'YmfpEIrScJwzkV650CGBqIGW', // 这里填写上面得到的APP KEY
+                    placeholder: '请踊跃发言' // 
+                });
+            </script>
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 YueXin Feng. All Rights Reserved.
+    </span>
+	<span id="busuanzi_container_site_pv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+	<span id="busuanzi_container_site_uv">
+    总访客<span id="busuanzi_value_site_uv"></span>人
+	</span>
+</footer>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="3">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <i class="fa fa-angle-left"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/01/24/JVM上/" data-tooltip="JVM上">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions"  href="#btn-open-shareoptions">
+                <i class="fa fa-share-alt"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-google-plus"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-facebook-official"></i>
+            </a>
+        </li>
+        <li class="post-action hide-xs">
+            <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-twitter"></i>
+            </a>
+        </li>
+        
+            <li class="post-action">
+                <a class="post-action-btn btn btn--default" href="#youyan_comments">
+                    <i class="fa fa-comment-o"></i>
+                </a>
+            </li>
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#">
+            
+                <i class="fa fa-list"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="3">
+    <ul class="share-options">
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-google-plus"></i><span class="">分享到 Google+</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-facebook-official"></i><span>分享到 Facebook</span>
+            </a>
+        </li>
+        <li class="share-option">
+            <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=http://andyken.github.io/2019/02/13/JVM_GC/">
+                <i class="fa fa-twitter"></i><span>分享到 Twitter</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div id="share-options-mask" class="share-options-mask"></div>
+            
+        </div>
+        <!-- Define author's picture -->
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-remove"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/mycover.png"/>
+        
+            <h4 id="about-card-name">YueXin Feng</h4>
+        
+            <h5 id="about-card-bio"><p>YueXin Feng</p>
+</h5>
+        
+        
+            <h5 id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Software developer</p>
+
+            </h5>
+        
+        
+            <h5 id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br/>
+                HangZhou China
+            </h5>
+        
+    </div>
+</div>
+
+        
+<div id="cover" style="background-image:url('/assets/images/cover.jpg');"></div>
+    </body>
+    <!--SCRIPTS-->
+<script src="/assets/js/script.min.js" type="text/javascript"></script>
+<!--SCRIPTS END-->
+
+
+</html>
